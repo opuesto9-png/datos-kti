@@ -126,7 +126,11 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .xlh h2 { margin: 0; font: 700 20px var(--head); }
 .xlmes { width: auto; min-width: 170px; }
 .xlbtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.xlbtns .btn { min-height: 46px; font-size: 15px; }
+.xlbtns .btn { position: relative; min-height: 46px; font-size: 15px; }
+.xlbtns .btn.hay { border-color: var(--accent2); }
+.xlbadge { position: absolute; top: -8px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #e5484d; color: #fff; font: 700 12px/22px var(--body); text-align: center; box-shadow: 0 0 0 2px var(--sheet); }
+.xlbadge.pop { animation: xlpop .35s ease; }
+@keyframes xlpop { 0% { transform: scale(.4); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
 .acc-grp { margin: 0 0 14px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; overflow: clip; }
 .acc { border-top: 1px solid var(--rule); scroll-margin-top: 66px; }
 .acc .aitem { border-top: 0; }
@@ -2778,6 +2782,7 @@ async function bajarExcel(sec) {
     wb.views = [{ activeTab: activo - 1, firstSheet: Math.max(0, activo - 6), x: 0, y: 0, width: 20000, height: 12000 }];
     const buf = await wb.xlsx.writeBuffer();
     busy(false);
+    xlMarcarVisto(sec);
     dlDirect(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'Planilla ' + sec.label + ' - ' + MESES[+XL_MES.slice(5, 7) - 1] + ' ' + XL_MES.slice(0, 4) + '.xlsx');
     toast('Se bajó el Excel de ' + sec.label + ': una hoja por día, ' + (lect.length ? lect.length + (lect.length === 1 ? ' lectura cargada.' : ' lecturas cargadas.') : 'todavía sin lecturas.'));
   } catch (e) { console.error(e); busy(false); toast('No se pudo armar el Excel: ' + (e.message || e)); }
@@ -2790,8 +2795,41 @@ function excelCard() {
   sel.value = XL_MES;
   return h('section', { class: 'xlcard' },
     h('div', { class: 'xlh' }, h('h2', null, 'Planillas en Excel'), sel),
-    h('div', { class: 'xlbtns' }, XL_SECC.map(sc => h('button', { class: 'btn', type: 'button', onclick: () => bajarExcel(sc) }, sc.label))));
+    h('div', { class: 'xlbtns' }, XL_SECC.map(sc => { const n = xlNuevos(sc); return h('button', { class: 'btn' + (n ? ' hay' : ''), type: 'button', 'data-sec': sc.id, onclick: () => bajarExcel(sc) }, sc.label, n ? h('span', { class: 'xlbadge', title: 'Lecturas nuevas sin bajar' }, n > 99 ? '99+' : String(n)) : null); })));
 }
+// Contador de lecturas nuevas por sección (solo compus), en vivo como en Pozos
+let XL_ENV = [], xlUnsub = null;
+const xlVisto = id => +lsGet('kti_xl_visto_' + id, '0') || 0;
+const xlNuevos = sc => { const v = xlVisto(sc.id); return XL_ENV.filter(x => sc.ids.includes(x.sheetId) && x.ts > v).length; };
+function xlMarcarVisto(sec) {
+  const max = XL_ENV.filter(x => sec.ids.includes(x.sheetId)).reduce((m, x) => Math.max(m, x.ts), 0);
+  lsSet('kti_xl_visto_' + sec.id, String(Math.max(Date.now(), max)));
+  pintarXL();
+}
+function pintarXL() {
+  document.querySelectorAll('.xlbtns .btn[data-sec]').forEach(b => {
+    const sc = XL_SECC.find(x => x.id === b.dataset.sec);
+    if (!sc) return;
+    const n = xlNuevos(sc);
+    let bd = b.querySelector('.xlbadge');
+    if (!n) { if (bd) bd.remove(); b.classList.remove('hay'); return; }
+    if (!bd) { bd = h('span', { class: 'xlbadge', title: 'Lecturas nuevas sin bajar' }); b.append(bd); }
+    const txt = n > 99 ? '99+' : String(n);
+    if (bd.textContent !== txt) { bd.textContent = txt; bd.classList.remove('pop'); void bd.offsetWidth; bd.classList.add('pop'); }
+    b.classList.add('hay');
+  });
+}
+function xlIniciar() {
+  if (xlUnsub || !FB_OK || esMovil()) return;
+  // la primera vez en esta compu arranca en cero (lo anterior no cuenta como nuevo)
+  XL_SECC.forEach(sc => { if (!lsGet('kti_xl_visto_' + sc.id, '')) lsSet('kti_xl_visto_' + sc.id, String(Date.now())); });
+  xlUnsub = FDB.collection(KTI_COL).orderBy('clientTs', 'desc').limit(400).onSnapshot(snap => {
+    XL_ENV = [];
+    snap.forEach(d => { const r = d.data(); if (r.tipo === 'planilla') XL_ENV.push({ sheetId: r.sheetId, ts: r.clientTs || 0 }); });
+    pintarXL();
+  }, e => console.error(e));
+}
+xlIniciar();
 
 /* ---------- Historial ---------- */
 function histView() {
