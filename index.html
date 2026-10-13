@@ -126,6 +126,24 @@ body.menu-open { overflow: hidden; }
 main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .hero { margin: -14px -14px 0; overflow: hidden; background: #050e1f; }
 .hero svg { display: block; width: 100%; height: 100%; }
+.hero.banner { height: clamp(170px, 44vw, 250px); margin-bottom: 14px; }
+.hturno { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); text-align: left; }
+.hturno:active { background: var(--field); }
+.hturno .htx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hturno .ht1 { font: 700 12px var(--head); letter-spacing: .4px; text-transform: uppercase; color: var(--ink2); }
+.hturno .ht2 { font: 600 16.5px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hturno .ht2.falta { color: var(--warn); }
+.hturno .chev { flex: none; font-size: 24px; color: var(--ink2); }
+.acc-grp { margin: 0 0 14px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.acc { border-top: 1px solid var(--rule); scroll-margin-top: 66px; }
+.acc .aitem { border-top: 0; }
+.acc.open > .aitem { background: var(--field); }
+.acc-chev { flex: none; width: 22px; height: 22px; color: var(--ink2); transition: transform .2s; }
+.acc-chev svg { display: block; }
+.acc.open .acc-chev { transform: rotate(180deg); }
+.acc-body { padding: 12px 10px 14px; background: var(--bg); border-top: 1px solid var(--rule); }
+.acc-body .grp { margin-bottom: 12px; }
+@media (prefers-reduced-motion: reduce) { .acc-chev { transition: none; } }
 body.has-bb main { padding-bottom: 130px; }
 
 /* Encabezado del informe */
@@ -1272,7 +1290,7 @@ $('#navscrim').addEventListener('click', closeMenu);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
 function sizeHero() {
-  const hero = $('.hero');
+  const hero = $('.hero:not(.banner)');
   if (!hero) return;
   const tb = $('#topbar'), bb = $('#bottombar');
   const tbH = tb ? tb.offsetHeight : 0;
@@ -1284,7 +1302,7 @@ window.addEventListener('resize', () => { if (view.name === 'home') sizeHero(); 
 if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (view.name === 'home') sizeHero(); });
 function render(keep) {
   const y = window.scrollY;
-  if (view.name === 'home') { S.equipos = S.equipos.filter(entryHasData); S.cargas = S.cargas.filter(entryHasData); }
+  if (view.name === 'home' && !(OPEN && BY[OPEN] && BY[OPEN].kind === 'list')) { S.equipos = S.equipos.filter(entryHasData); S.cargas = S.cargas.filter(entryHasData); }
   renderTop();
   const m = $('#main');
   m.replaceChildren(...(view.name === 'home' ? homeView() : view.name === 'hist' ? histView() : view.name === 'recibidos' ? recibView() : view.name === 'turno' ? turnoView() : BY[view.id].kind === 'list' ? listView(BY[view.id]) : formView(BY[view.id])));
@@ -1388,7 +1406,7 @@ function itemIndicator(sh) {
 function assetRow(sh) {
   const ind = itemIndicator(sh);
   const ic = h('span', { class: 'aic' }); ic.innerHTML = ind.html;
-  return h('button', { class: 'aitem', type: 'button', onclick: () => menuGo({ name: 'sheet', id: sh.id }) },
+  return h('button', { class: 'aitem', type: 'button', onclick: () => abrirEquipo(sh.id) },
     ic, h('span', { class: 'atxt' }, h('span', { class: 'anm' }, sh.title), h('span', { class: 'asub' + (ind.cls ? ' ' + ind.cls : '') }, ind.sub)));
 }
 function groupBlock(g) {
@@ -1465,7 +1483,7 @@ function renderBottom() {
   if (!home) { el.replaceChildren(); return; }
   el.replaceChildren(h('div', { class: 'wrap bb' },
     h('button', { class: 'btn', type: 'button', onclick: nuevo }, 'Nuevo informe'),
-    h('button', { class: 'btn primary grow', type: 'button', onclick: generar }, 'Generar informe PDF')));
+    h('button', { class: 'btn primary grow', type: 'button', onclick: generar }, esMovil() ? 'Enviar informe' : 'Generar informe PDF')));
 }
 
 /* ---------- Inicio ---------- */
@@ -1475,10 +1493,55 @@ function fld(label, ctrl) {
   if (!lab) { w.setAttribute('role', 'group'); w.setAttribute('aria-label', label); }
   return w;
 }
+let OPEN = null;
+try { OPEN = sessionStorage.getItem('kti_open') || null; } catch (e) {}
+function setOpen(id) { OPEN = id && BY[id] ? id : null; try { if (OPEN) sessionStorage.setItem('kti_open', OPEN); else sessionStorage.removeItem('kti_open'); } catch (e) {} }
+const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function homeView() {
-  const hero = h('div', { class: 'hero', role: 'img', 'aria-label': 'Planta de gas' });
-  hero.innerHTML = PLANT_ART;
-  return [hero];
+  const hero = h('div', { class: 'hero banner', role: 'img', 'aria-label': 'Planta de gas' });
+  hero.innerHTML = PLANT_ART.replace('viewBox="0 0 800 1000"', 'viewBox="0 250 800 560"');
+  const opSet = S.operador && S.operador.trim();
+  const turno = h('button', { class: 'hturno', type: 'button', onclick: () => go({ name: 'turno' }) },
+    h('span', { class: 'htx' }, h('span', { class: 'ht1' }, opSet ? 'Turno actual' : 'Datos del turno'),
+      h('span', { class: 'ht2' + (opSet ? '' : ' falta') }, opSet ? S.operador.trim() + (S.legajo && S.legajo.trim() ? ' · legajo ' + S.legajo.trim() : '') : 'Tocá para cargar operador y legajo')),
+    h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
+  return [hero, turno, ...GROUP_ORDER.map(accGroup)];
+}
+function accGroup(g) {
+  const items = SHEETS.filter(s => s.grp === g);
+  const chip = h('span', { class: 'aic-chip' }); chip.innerHTML = ICONS[GROUP_ICON[g] || 'bolt'];
+  const head = h('div', { class: 'agrp-h' }, chip, h('span', { class: 'agnm' }, g), h('span', { class: 'agct' }, items.length + (items.length === 1 ? ' equipo' : ' equipos')));
+  return h('section', { class: 'acc-grp' }, head, items.map(accItem));
+}
+function accHeadInner(sh) {
+  const ind = itemIndicator(sh);
+  const ic = h('span', { class: 'aic' }); ic.innerHTML = ind.html;
+  const ch = h('span', { class: 'acc-chev', 'aria-hidden': 'true' }); ch.innerHTML = CHEV;
+  return [ic, h('span', { class: 'atxt' }, h('span', { class: 'anm' }, sh.title), h('span', { class: 'asub' + (ind.cls ? ' ' + ind.cls : '') }, ind.sub)), ch];
+}
+function accItem(sh) {
+  const open = OPEN === sh.id;
+  const head = h('button', { class: 'aitem', type: 'button', id: 'acc-h-' + sh.id, 'aria-expanded': String(open), 'aria-controls': 'acc-b-' + sh.id, onclick: () => toggleAcc(sh.id) }, accHeadInner(sh));
+  const wrap = h('div', { class: 'acc' + (open ? ' open' : ''), id: 'acc-' + sh.id }, head);
+  if (open) wrap.append(h('div', { class: 'acc-body', id: 'acc-b-' + sh.id }, sh.kind === 'list' ? listView(sh) : formView(sh)));
+  return wrap;
+}
+function refreshAccHead(sh) { const hd = $('#acc-h-' + sh.id); if (hd) hd.replaceChildren(...accHeadInner(sh)); }
+function toggleAcc(id) {
+  const cerrando = OPEN === id;
+  setOpen(cerrando ? null : id);
+  render(true);
+  const el = $('#acc-' + id);
+  if (!el) return;
+  if (!cerrando) el.scrollIntoView({ block: 'start' });
+  else if (el.getBoundingClientRect().top < 66) el.scrollIntoView({ block: 'start' });
+}
+// desde el menú lateral: abre ese equipo en el inicio
+function abrirEquipo(id) {
+  setOpen(id);
+  go({ name: 'home' }, view.name === 'home' ? 'replace' : undefined);
+  const el = $('#acc-' + id);
+  if (el) el.scrollIntoView({ block: 'start' });
 }
 function turnoView() {
   const set = (k, v) => { S[k] = v; touch(); };
@@ -1618,7 +1681,10 @@ function formView(sh) {
 }
 function navEl(sh) {
   const nx = SHEETS[SHEETS.indexOf(sh) + 1];
-  const out = [saveEl(sh), h('div', { class: 'navrow' },
+  const enInicio = view.name === 'home';
+  const out = [saveEl(sh), enInicio ? h('div', { class: 'navrow' },
+    h('button', { class: 'btn', type: 'button', onclick: () => toggleAcc(sh.id) }, 'Cerrar'),
+    nx ? h('button', { class: 'btn primary', type: 'button', onclick: () => toggleAcc(nx.id) }, 'Siguiente: ' + nx.title) : null) : h('div', { class: 'navrow' },
     h('button', { class: 'btn', type: 'button', onclick: back }, 'Volver al índice'),
     nx ? h('button', { class: 'btn primary', type: 'button', onclick: () => go({ name: 'sheet', id: nx.id }, 'replace') }, 'Siguiente: ' + nx.title) : null)];
   if (sh.kind === 'form') out.push(h('button', { class: 'link danger', type: 'button', onclick: () => clearSheet(sh) }, 'Borrar los datos de esta planilla'));
@@ -1757,6 +1823,7 @@ async function saveFile(blob, name) {
     if (c === 'extension_not_enabled' || c === 'rejected_extension') { toast('Este visor no permite guardar archivos ' + name.split('.').pop().toUpperCase() + '.'); return 'declined'; }
     if (c === 'too_large') { toast('El archivo es demasiado grande para guardarlo acá.'); return 'declined'; }
   }
+  if (!esMovil()) { try { dlDirect(blob, name); return 'saved'; } catch (e) { return 'error'; } }
   try {
     const file = new File([blob], name, { type: blob.type || 'application/pdf' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return 'saved'; }
@@ -1794,7 +1861,7 @@ async function entregar(st, fmt) {
   return blob ? saveFile(blob, name) : 'error';
 }
 async function askFormato(conCentral) {
-  const central = !!conCentral && FB_OK && !PRINCIPAL && !MCP;
+  const central = !!conCentral && FB_OK && esMovil() && !MCP;
   const last = PREFS.formato === 'zip' ? 'zip' : PREFS.formato === 'central' && central ? 'central' : 'uno';
   const r = await ask('Generar informe', '¿Cómo querés armarlo?', [
     central ? { id: 'central', label: 'Solo enviar a la compu principal', sub: 'No baja nada en el celular. La compu principal lo recibe y lo baja.', kind: 'opt' + (last === 'central' ? ' primary' : '') } : null,
@@ -1842,8 +1909,16 @@ async function nuevo() {
 async function generar() {
   if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
   if (!hasAnyData(S)) return toast('Todavía no cargaste datos.');
-  const fmt = await askFormato(true);
-  if (!fmt) return;
+  let fmt;
+  if (esMovil()) {
+    if (!FB_OK) return toast('Sin conexión con la compu principal. Abrí la app una vez con señal y probá de nuevo.');
+    const a = await ask('¿Enviar el informe?', 'Se envía el informe completo a la compu principal, donde lo bajan en PDF.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Enviar', kind: 'primary' }]);
+    if (a !== 'si') return;
+    fmt = 'central';
+  } else {
+    fmt = await askFormato(false);
+    if (!fmt) return;
+  }
   if (fmt !== 'central') {
     const res = await entregar(S, fmt);
     if (res === 'error') return toast('No se pudo armar el archivo. Probá de nuevo.');
@@ -1883,20 +1958,23 @@ function destNodes(sh) {
   const ruta = DRIVE_ROOT + ' / ' + sh.carpeta, g = S.guardadas && S.guardadas[sh.id];
   if (g) {
     const igual = g.firma === firmaDe(sh);
-    const out = ['Guardada ' + fmtHora(g.fecha) + (g.donde === 'drive' ? ' en ' + ruta + '.' : g.donde === 'central' ? ' y enviada a la compu principal.' : ' como PDF en el celular.')];
-    if (g.donde === 'central' && igual) out.push(' ', h('button', { class: 'link', type: 'button', onclick: () => bajarAca(sh) }, 'Bajar el PDF acá'), ' ·');
+    const out = ['Guardada ' + fmtHora(g.fecha) + (g.donde === 'drive' ? ' en ' + ruta + '.' : g.donde === 'central' ? ' y enviada a la compu principal.' : ' y bajada como PDF.')];
+    if (g.donde === 'central' && igual && !esMovil()) out.push(' ', h('button', { class: 'link', type: 'button', onclick: () => bajarAca(sh) }, 'Bajar el PDF acá'), ' ·');
     if (igual) out.push(' ', h('button', { class: 'link', type: 'button', onclick: () => clearSheet(sh, true) }, 'Dejar en blanco para la próxima lectura'));
     else out.push(' Tenés cambios sin guardar.');
     return out;
   }
-  if (MCP_ST === 'no' && FB_OK && !PRINCIPAL) return ['Se envía a la compu principal, con la fecha y la hora.'];
-  if (MCP_ST === 'no') return ['Al guardar se baja el PDF (en el celular podés elegir Drive en el menú de compartir).'];
+  if (MCP_ST === 'no' && esMovil()) return [FB_OK ? 'Se envía a la compu principal, con la fecha y la hora.' : 'Sin conexión con la compu principal: abrí la app una vez con señal.'];
+  if (MCP_ST === 'no') return ['Se baja el PDF en esta compu' + (FB_OK && !PRINCIPAL ? ' y se envía a la compu principal.' : '.')];
   return ['Se guarda en Drive, en ' + ruta + ', con la fecha y la hora como nombre.'];
 }
 function paintDest() {
+  if (!S) return;
+  const id = view.name === 'sheet' ? view.id : view.name === 'home' ? OPEN : null;
+  if (!id || !BY[id]) return;
+  if (view.name === 'home') refreshAccHead(BY[id]);
   const el = $('#dest');
-  if (!el || !S || view.name !== 'sheet' || !BY[view.id]) return;
-  el.replaceChildren(...destNodes(BY[view.id]));
+  if (el) el.replaceChildren(...destNodes(BY[id]));
 }
 function saveEl(sh) {
   return h('div', { class: 'savebox' },
@@ -2001,7 +2079,8 @@ async function guardarPlanilla(sh) {
   };
   const env = FB_OK ? enviarCentral('planilla', stateDe(sh), { sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }) : null;
   if (env && PRINCIPAL) marcarBajado([env]);
-  if (env && !MCP && !PRINCIPAL) {
+  if (esMovil() && !MCP) {
+    if (!env) return toast('Sin conexión con la compu principal. Abrí la app una vez con señal y probá de nuevo.');
     listo('central');
     toast(navigator.onLine === false ? 'Sin señal: la planilla sale sola a la compu principal cuando vuelva la señal.' : 'Planilla enviada a la compu principal.');
     return;
@@ -2218,13 +2297,13 @@ iniciarRecibidos();
 
 /* ---------- Historial ---------- */
 function histView() {
-  if (!HIST.length) return [h('div', { class: 'empty' }, h('h2', null, 'Todavía no hay informes guardados'), h('p', null, 'Cuando generes un PDF, el informe queda guardado acá, en este dispositivo.'))];
+  if (!HIST.length) return [h('div', { class: 'empty' }, h('h2', null, 'Todavía no hay informes guardados'), h('p', null, esMovil() ? 'Cuando envíes un informe, queda guardado acá, en este celular.' : 'Cuando generes un PDF, el informe queda guardado acá, en este dispositivo.'))];
   return HIST.map(r => h('article', { class: 'hcard' },
     h('div', { class: 'hh' }, h('b', null, fmtFecha(r.fecha)), h('span', null, r.operador + ', legajo ' + r.legajo)),
     h('p', null, summaryText(r.resumen)),
     h('div', { class: 'hact' },
       h('button', { class: 'btn', type: 'button', onclick: () => abrirHist(r) }, 'Abrir'),
-      h('button', { class: 'btn', type: 'button', onclick: () => pdfHist(r) }, 'PDF'),
+      esMovil() ? null : h('button', { class: 'btn', type: 'button', onclick: () => pdfHist(r) }, 'PDF'),
       h('button', { class: 'btn', type: 'button', onclick: () => borrarHist(r) }, 'Eliminar'))));
 }
 async function abrirHist(r) {
