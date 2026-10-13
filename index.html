@@ -1,0 +1,2069 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1f3d">
+<title>Datos KTI</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Datos KTI">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #e4e9ee; --sheet: #ffffff; --ink: #0f1c2b; --ink2: #4b5b6c; --rule: #d3dae2;
+  --field: #f2f5f8; --fieldb: #b9c5d1; --navy: #0a1f3d; --onnavy: #ffffff;
+  --primary: #0a1f3d; --onprimary: #ffffff; --focus: #2f7de1;
+  --ok: #1b7f45; --bad: #c62828; --warn: #b26a00;
+  --gas: #d9a000; --oil: #8a5a33; --fire: #c62828; --steel: #5b6b7c;
+  --head: "Barlow Condensed", "Roboto Condensed", "sans-serif-condensed", "Avenir Next Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #08111b; --sheet: #101b29; --ink: #e7eef6; --ink2: #9fb1c4; --rule: #23364b;
+    --field: #0b1521; --fieldb: #2f465f; --navy: #0c2748; --primary: #3b82d6; --onprimary: #ffffff;
+    --ok: #3fbf78; --bad: #ef6b6b; --warn: #e3a13b;
+    --gas: #e6b422; --oil: #b98255; --fire: #e05252; --steel: #8496a9;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #08111b; --sheet: #101b29; --ink: #e7eef6; --ink2: #9fb1c4; --rule: #23364b;
+  --field: #0b1521; --fieldb: #2f465f; --navy: #0c2748; --primary: #3b82d6; --onprimary: #ffffff;
+  --ok: #3fbf78; --bad: #ef6b6b; --warn: #e3a13b;
+  --gas: #e6b422; --oil: #b98255; --fire: #e05252; --steel: #8496a9;
+}
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); background: var(--navy); -webkit-text-size-adjust: 100%; }
+*, *::before, *::after { box-sizing: inherit; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.35 var(--body); min-height: 100vh; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.f-gas { --fl: var(--gas); } .f-oil { --fl: var(--oil); } .f-fire { --fl: var(--fire); } .f-steel { --fl: var(--steel); }
+.wrap { max-width: 720px; margin: 0 auto; }
+
+/* Barra superior */
+#topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--navy); color: var(--onnavy); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+#topbar .wrap { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 6px 14px; position: relative; }
+#topbar h1 { flex: 1; min-width: 0; margin: 0; font: 700 21px/1.08 var(--head); letter-spacing: .2px; }
+.brandtab { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 8px; align-self: stretch; margin: 6px 0; padding: 0 16px; background: linear-gradient(180deg, color-mix(in srgb, #fff 16%, transparent), color-mix(in srgb, #fff 3%, transparent)); border: 1px solid rgba(255,255,255,.22); border-bottom: 3px solid var(--focus); border-radius: 10px 10px 4px 4px; font: 700 20px/1.05 var(--head); letter-spacing: .3px; color: #fff; }
+.tbtn { height: 42px; padding: 0 14px; border-radius: 9px; border: 1.5px solid rgba(255,255,255,.5); background: transparent; color: #fff; font: 600 16px var(--body); }
+.back { flex: none; width: 44px; height: 44px; margin-left: -8px; border: 0; background: transparent; color: #fff; display: grid; place-items: center; }
+.prog { flex: none; font: 600 17px var(--body); font-variant-numeric: tabular-nums; color: #cfe0f5; }
+.menubtn { flex: none; width: 44px; height: 44px; margin-right: -6px; border: 0; border-radius: 9px; background: transparent; color: #fff; display: grid; place-items: center; transition: background .15s; }
+.menubtn:active, .menubtn.on { background: rgba(255,255,255,.14); }
+.menubtn svg { display: block; }
+
+/* Panel de navegación (solapa de equipos) */
+#navscrim { position: fixed; inset: 0; z-index: 24; background: rgba(6,12,20,.55); backdrop-filter: blur(1px); opacity: 0; pointer-events: none; transition: opacity .28s ease; }
+#navscrim.show { opacity: 1; pointer-events: auto; }
+#navdrawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 25; width: min(410px, 88vw); display: flex; flex-direction: column; background: var(--sheet); box-shadow: -10px 0 36px rgba(0,0,0,.35); transform: translateX(102%); transition: transform .32s cubic-bezier(.32,.72,0,1); pointer-events: none; padding-top: env(safe-area-inset-top, 0px); }
+#navdrawer.show { transform: translateX(0); pointer-events: auto; }
+body.menu-open { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { #navdrawer, #navscrim { transition: none; } }
+
+.nd-head { flex: none; background: var(--navy); color: #fff; padding: 16px 16px 14px; }
+.nd-head .row1 { display: flex; align-items: center; gap: 12px; }
+.brandmark { flex: none; width: 36px; height: 36px; color: #fff; }
+.brandmark svg { display: block; }
+.nd-head .word { flex: 1; min-width: 0; }
+.nd-head .t1 { display: block; font: 700 21px/1.05 var(--head); letter-spacing: .2px; }
+.nd-head .t2 { display: block; margin-top: 1px; font: 500 12px var(--body); letter-spacing: .3px; color: rgba(255,255,255,.6); }
+.nd-close { flex: none; width: 38px; height: 38px; border: 0; border-radius: 9px; background: rgba(255,255,255,.08); color: #fff; display: grid; place-items: center; }
+.nd-close:active { background: rgba(255,255,255,.2); }
+.nd-op { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 12px; padding: 12px 2px 0; border: 0; border-top: 1px solid rgba(255,255,255,.15); background: transparent; text-align: left; font: 500 13.5px var(--body); color: rgba(255,255,255,.7); }
+.nd-op:active { opacity: .7; }
+.nd-op span:not(.chev) { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nd-op b { color: #fff; font-weight: 600; }
+.nd-op .chev { color: rgba(255,255,255,.55); }
+
+.nd-quick { flex: none; display: flex; gap: 10px; padding: 12px 14px; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.nd-quick button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 46px; padding: 6px 4px; border-radius: 9px; border: 1.5px solid var(--rule); background: var(--sheet); }
+.nd-quick button:active { background: var(--field); }
+.qic { flex: none; width: 18px; height: 18px; color: var(--ink2); }
+.qic svg { display: block; }
+.qtx { font: 600 13.5px var(--body); color: var(--ink); white-space: nowrap; }
+
+.nd-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--sheet); }
+.agrp + .agrp { margin-top: 2px; }
+.agrp-h { display: flex; align-items: center; gap: 9px; padding: 15px 14px 8px; }
+.aic-chip { flex: none; width: 22px; height: 22px; color: var(--steel); }
+.aic-chip svg { display: block; }
+.agnm { flex: 1; min-width: 0; font: 700 12px var(--head); letter-spacing: .4px; text-transform: uppercase; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agct { flex: none; font: 500 12px var(--body); color: var(--ink2); font-variant-numeric: tabular-nums; }
+.agrp-list .aitem:first-child { border-top: 0; }
+
+.aitem { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 9px 14px; border: 0; border-top: 1px solid var(--rule); background: transparent; text-align: left; }
+.aitem:active { background: var(--field); }
+.aic { flex: none; width: 24px; height: 24px; display: grid; place-items: center; }
+.atxt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.anm { font: 600 16.5px var(--body); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.asub { font: 500 12.5px var(--body); color: var(--ink2); }
+.asub.ok { color: var(--ok); }
+.asub.warn { color: var(--warn); }
+
+.ring { transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 2.5; }
+.ring .rtrack { stroke: var(--rule); }
+.ring .rval { stroke: var(--focus); stroke-linecap: round; transition: stroke-dashoffset .2s; }
+.ring.empty .rval { stroke: transparent; }
+.ring.done .rval { stroke: var(--ok); }
+.ring.chg .rval { stroke: var(--warn); }
+.cbadge { width: 24px; height: 24px; border-radius: 50%; background: var(--field); color: var(--ink2); font: 700 11.5px var(--body); display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.cbadge.has { background: color-mix(in srgb, var(--focus) 16%, transparent); color: var(--focus); }
+
+.nd-foot { flex: none; padding: 10px 14px calc(11px + env(safe-area-inset-bottom, 0px)); text-align: center; font: 500 11.5px var(--body); letter-spacing: .2px; color: var(--ink2); background: var(--bg); border-top: 1px solid var(--rule); }
+main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
+.hero { margin: -14px -14px 0; overflow: hidden; background: #050e1f; }
+.hero svg { display: block; width: 100%; height: 100%; }
+body.has-bb main { padding-bottom: 130px; }
+
+/* Encabezado del informe */
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 4px; }
+.card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.card-h h2 { margin: 0; font: 700 22px/1.1 var(--head); }
+.status { font-size: 13.5px; color: var(--ink2); text-align: right; }
+.fld { display: block; margin: 0 0 14px; }
+.fl { display: block; font-size: 14.5px; color: var(--ink2); margin-bottom: 5px; }
+.txt { display: block; width: 100%; height: 52px; padding: 0 12px; border: 1.5px solid var(--fieldb); border-radius: 8px; background: var(--field); color: var(--ink); font: 500 18px var(--body); }
+textarea.txt { height: auto; min-height: 92px; padding: 10px 12px; line-height: 1.35; resize: vertical; }
+select.txt { appearance: auto; }
+.txt:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent); }
+.txt.err { border-color: var(--bad); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent); }
+.dt { display: flex; gap: 8px; }
+.dt .txt { flex: 1; min-width: 0; }
+.hint { margin: 12px 2px 0; color: var(--ink2); font-size: 15px; }
+
+/* Índice */
+.idx-group { margin: 24px 0 0; }
+.idx-group h2 { margin: 0 2px 8px; font: 700 21px/1.1 var(--head); }
+.idx-list { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.idx { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 66px; padding: 11px 10px 11px 12px; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-left: 6px solid var(--fl, var(--steel)); }
+.idx:last-child { border-bottom: 0; }
+.idx:active { background: var(--field); }
+.idx .tc { flex: 1; min-width: 0; }
+.idx .nm { display: block; font: 700 23px/1.05 var(--head); }
+.idx .sub { display: block; margin-top: 2px; font-size: 14.5px; color: var(--ink2); }
+.bar { display: block; height: 4px; margin-top: 7px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--fl, var(--steel)); }
+.chev { flex: none; font-size: 28px; line-height: 1; color: var(--ink2); }
+.cnt { flex: none; font: 600 16px var(--body); font-variant-numeric: tabular-nums; color: var(--ink2); }
+.cnt.done { color: var(--ok); }
+
+/* Planillas */
+.grp { margin: 0 0 16px; padding: 2px 14px 8px; background: var(--sheet); border: 1px solid var(--rule); border-left: 6px solid var(--fl, var(--steel)); border-radius: 10px; }
+.grp h3 { margin: 12px 0 4px; font: 700 20px/1.15 var(--head); }
+.row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+.row:last-child { border-bottom: 0; }
+.row .lab { flex: 1; min-width: 0; font-size: 16px; line-height: 1.22; }
+.row.col { flex-direction: column; align-items: stretch; gap: 6px; }
+.in { position: relative; display: flex; align-items: center; flex: none; width: 8.6rem; height: 48px; padding: 0 8px; border: 1.5px solid var(--fieldb); border-radius: 8px; background: var(--field); }
+.in:focus-within { border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent); }
+.in.over { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--field)); }
+.in input { flex: 1; min-width: 0; width: 100%; padding: 0; border: 0; outline: none; background: transparent; color: var(--ink); font: 500 20px var(--body); font-variant-numeric: tabular-nums; text-align: right; }
+.in input::placeholder { color: var(--ink2); opacity: .5; font-style: italic; }
+.in .u { flex: none; margin-left: 6px; font-size: 13px; color: var(--ink2); white-space: nowrap; }
+.in.wide { width: 100%; }
+.pm { order: -1; flex: none; width: 30px; height: 32px; margin: 0 6px 0 -2px; padding: 0; border: 0; border-radius: 6px; background: var(--rule); color: var(--ink2); font: 700 18px/1 var(--body); }
+.cells { display: grid; grid-template-columns: repeat(var(--c, 3), minmax(0, 1fr)); gap: 10px 8px; padding: 6px 0 8px; }
+.cell { display: block; min-width: 0; }
+.cell > span { display: block; margin-bottom: 3px; font-size: 13.5px; color: var(--ink2); }
+.cell .in { width: 100%; height: 46px; padding: 0 6px; }
+.cell .in input { text-align: center; font-size: 19px; }
+
+.seg { display: inline-flex; flex: none; border: 1.5px solid var(--fieldb); border-radius: 8px; overflow: hidden; }
+.segb { min-width: 62px; height: 45px; padding: 0 14px; border: 0; border-left: 1.5px solid var(--fieldb); background: var(--field); font-weight: 600; font-size: 16px; }
+.segb:first-child { border-left: 0; }
+.segb.on { background: var(--ink); color: var(--sheet); }
+.segb.on.o-ok, .segb.on.o-si { background: var(--ok); color: #fff; }
+.segb.on.o-bajo, .segb.on.o-no { background: var(--bad); color: #fff; }
+.segb.on.o-sat { background: var(--warn); color: #fff; }
+.tog { position: relative; flex: none; width: 62px; height: 40px; padding: 0; border: 1.5px solid var(--fieldb); border-radius: 20px; background: var(--field); }
+.tog i { position: absolute; top: 3px; left: 3px; width: 31px; height: 31px; border-radius: 50%; background: var(--ink2); transition: transform .15s, background .15s; }
+.tog.on { background: var(--ok); border-color: var(--ok); }
+.tog.on i { transform: translateX(22px); background: #fff; }
+
+/* Reportes con lista */
+.entry { margin: 0 0 16px; padding: 12px 14px 16px; background: var(--sheet); border: 1px solid var(--rule); border-left: 6px solid var(--fl, var(--steel)); border-radius: 10px; }
+.ehead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ehead h3 { margin: 0; font: 700 22px/1.1 var(--head); }
+.link { padding: 10px 2px; border: 0; background: none; color: var(--primary); font: 600 15.5px var(--body); text-decoration: underline; }
+.link.danger { color: var(--bad); }
+.prio, .est { display: grid; gap: 6px; }
+.est { grid-template-columns: 1fr 1fr; }
+.pr, .es { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px; text-align: left; border: 1.5px solid var(--fieldb); border-radius: 8px; background: var(--field); color: var(--ink); }
+.pr .dot, .es .dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.pr b { display: block; font-weight: 600; font-size: 16.5px; }
+.pr small { display: block; font-size: 13.5px; color: var(--ink2); }
+.es { font-weight: 600; font-size: 16px; }
+.pr.on, .es.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--field)); box-shadow: inset 0 0 0 1.5px var(--c); }
+.thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.th { position: relative; width: 96px; height: 96px; margin: 0; overflow: hidden; border: 1px solid var(--rule); border-radius: 8px; }
+.th img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.th .x { position: absolute; top: 3px; right: 3px; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(0,0,0,.68); color: #fff; font-size: 22px; line-height: 1; }
+.pbtns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pcount { font-size: 14.5px; color: var(--ink2); }
+
+/* Botones */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 18px; border: 1.5px solid var(--fieldb); border-radius: 10px; background: var(--sheet); color: var(--ink); font: 600 17px var(--body); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--onprimary); }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.small { min-height: 46px; padding: 0 14px; font-size: 16px; }
+.btn.wide { width: 100%; }
+.btn.grow { flex: 1; }
+.btn:disabled { opacity: .45; }
+.navrow { display: flex; gap: 10px; margin: 18px 0 6px; }
+.navrow .btn { flex: 1; }
+.navrow + .link { display: block; margin: 8px auto 0; }
+#bottombar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--sheet); border-top: 1px solid var(--rule); padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.bb { display: flex; gap: 10px; }
+
+/* Diálogos, aviso, historial */
+.ovl { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; padding: 16px; background: rgba(6,14,24,.6); }
+.dlg { width: 100%; max-width: 440px; padding: 20px; background: var(--sheet); color: var(--ink); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+.dlg h2 { margin: 0 0 6px; font: 700 23px/1.1 var(--head); }
+.dlg p { margin: 0; color: var(--ink2); }
+.dact { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.dact .btn { flex: 1; min-width: 130px; }
+.dact.stack { flex-direction: column; }
+.dact.stack .btn { flex: none; width: 100%; }
+.btn.opt { flex-direction: column; align-items: flex-start; gap: 2px; min-height: 66px; padding: 10px 16px; text-align: left; }
+.btn.opt b { font-weight: 600; font-size: 17.5px; }
+.btn.opt small { font-weight: 400; font-size: 14.5px; opacity: .85; line-height: 1.25; }
+.ovl.busy { flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #fff; font-weight: 600; }
+.spin { width: 36px; height: 36px; border: 4px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: sp .8s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+#toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 60; max-width: calc(100% - 32px); padding: 11px 16px; border-radius: 10px; background: var(--ink); color: var(--sheet); font-size: 15.5px; text-align: center; opacity: 0; pointer-events: none; transform: translate(-50%, 16px); transition: opacity .2s, transform .2s; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+body.has-bb #toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.empty { padding: 28px 8px; text-align: center; }
+.empty h2 { margin: 0 0 6px; font: 700 23px var(--head); }
+.empty p { margin: 0; color: var(--ink2); }
+.hcard { margin: 0 0 12px; padding: 14px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+.hcard .hh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.hcard b { font: 700 21px var(--head); }
+.hcard .hh span { color: var(--ink2); font-size: 15px; }
+.hcard p { margin: 4px 0 10px; color: var(--ink2); font-size: 15px; }
+.hact { display: flex; gap: 8px; }
+.hact .btn { flex: 1; min-height: 46px; padding: 0 10px; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.savebox { margin: 20px 0 6px; }
+.dest { margin: 8px 4px 0; text-align: center; font-size: 14.5px; line-height: 1.45; color: var(--ink2); }
+.dest .link { display: inline; padding: 0 2px; font-size: 14.5px; }
+.sv { flex: none; padding: 4px 9px; border-radius: 999px; font: 600 13.5px var(--body); white-space: nowrap; }
+.sv.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.sv.chg { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, transparent); }
+
+</style>
+</head>
+<body>
+<div id="topbar"><div class="wrap"><span class="brandtab">Datos KTI</span></div></div>
+<main id="main"><p class="hint">Cargando…</p></main>
+<div id="bottombar" hidden></div>
+<div id="navscrim"></div>
+<div id="navdrawer"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+'use strict';
+/* ===== Esquema: planillas, campos y catálogos ===== */
+const FLUID = { gas: '#d9a000', oil: '#8a5a33', fire: '#c62828', steel: '#5b6b7c' };
+
+// Constructores de campos: n = número, s = opciones, a = texto largo, b = interruptor
+const num = (k, l, u, x) => Object.assign({ k, l, u: u || '', t: 'n', neg: /^(Temp|T°)/i.test(l) }, x || {});
+const opt = (k, l, o) => ({ k, l, t: 's', o });
+const txt = (k, l) => ({ k, l, t: 'a' });
+const tog = (k, l) => ({ k, l, t: 'b' });
+const grid = (p, n) => Array.from({ length: n }, (_, i) => ({ k: p + (i + 1), l: '#' + (i + 1), u: '', t: 'n', neg: false }));
+/* Compensador de aceite (MC y RC, todos iguales): depósito cilíndrico horizontal, medidas según croquis.
+   Se calcula con las dimensiones INTERIORES (descontando 0,3 cm de pared en diámetro y en longitud). */
+const COMP = (() => {
+  const DE = 57.5, ESP = 0.3, LE = 85;
+  const D = DE - 2 * ESP, R = D / 2, LI = LE - 2 * ESP;
+  return { D, R, LI, VTOT: Math.PI * R * R * LI / 1000 };
+})();
+// pct = % que marca el visor (0-100 % de la altura interior). Devuelve cm y litros que hay y que faltan hasta el 100 %.
+function compCalc(pct) {
+  let p = toNum(pct);
+  if (p === null) return null;
+  p = Math.min(100, Math.max(0, p));
+  const h = COMP.D * p / 100, r = COMP.R;
+  const seg = h <= 0 ? 0 : COMP.LI * (r * r * Math.acos((r - h) / r) - (r - h) * Math.sqrt(Math.max(0, 2 * r * h - h * h))) / 1000;
+  return { hNow: h, hFalta: COMP.D - h, vNow: seg, vFalta: Math.max(0, COMP.VTOT - seg) };
+}
+/* Cisterna general de aceite: cilindro horizontal de 180 cm de diámetro; 864 cm entre líneas de tangencia,
+   más 5 cm de faldón en cada extremo y dos fondos abombados de 40 cm de profundidad (se toman semielipsoidales). */
+const CIST = { R: 90, LCIL: 864 + 2 * 5, A: 40 };
+CIST.D = 2 * CIST.R;
+CIST.VTOT = (Math.PI * CIST.R * CIST.R * CIST.LCIL + 4 / 3 * Math.PI * CIST.R * CIST.R * CIST.A) / 1000;
+// cm = altura de aceite medida en la cisterna (0-180). Devuelve litros o null si no hay medida válida.
+function cistLitros(cm) {
+  let h = toNum(cm);
+  if (h === null) return null;
+  h = Math.min(CIST.D, Math.max(0, h));
+  if (h <= 0) return 0;
+  const r = CIST.R;
+  const cuerpo = CIST.LCIL * (r * r * Math.acos((r - h) / r) - (r - h) * Math.sqrt(Math.max(0, 2 * r * h - h * h)));
+  const fondos = (CIST.A / r) * Math.PI * h * h * (3 * r - h) / 3;
+  return (cuerpo + fondos) / 1000;
+}
+// Resultado de una carga: inicial, final, litros cargados a las máquinas y stock que queda
+function cistCalc(ini, fin) {
+  const vi = cistLitros(ini), vf = cistLitros(fin);
+  const r = { vi, vf, cargado: null, stock: vf, pct: vf === null ? null : 100 * vf / CIST.VTOT, invertida: false };
+  if (vi !== null && vf !== null) { if (vf > vi + 0.05) r.invertida = true; else r.cargado = Math.max(0, vi - vf); }
+  return r;
+}
+const fmtL = n => n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+// Campo de la cisterna: medida inicial (k) y final (k2), en cm
+const cis = (k, k2, l) => ({ k, k2, l, t: 'c' });
+const fmt1 = n => (Math.round(n * 10) / 10).toFixed(1).replace('.', ',');
+// Nivel del visor (%) + carga realizada (litros). k = clave de la carga (litros); el visor se guarda en k_v
+const vis = (k, l) => ({ k, l, t: 'v', vk: k + '_v' });
+// Nivel con estado (OK/Bajo) y además un cuadro para el porcentaje (clave: <k>_p)
+const optp = (k, l, o) => Object.assign(opt(k, l, o), { pk: k + '_p' });
+const pctOf = f => ({ k: f.pk, l: f.l + ' (%)', u: '%', t: 'n', neg: false, max: 100 });
+const OKB = ['OK', 'Bajo'], OKS = ['OK', 'SAT'], SN = ['Sí', 'No'];
+
+const TIPOS = ['Motocompresor', 'Recompresor', 'Turbo Expansor', 'Bomba', 'Separador', 'Intercambiador', 'Filtro',
+  'Puente de Medición', 'Torre', 'Horno', 'Aero Enfriador', 'Compresor de Aire', 'Válvula', 'Fosa', 'Tanques',
+  'Ablandador', 'Cisterna', 'CCM', 'Shelter', 'Detectores y Pulsadores', 'Compresores de Propano', 'Regenerador',
+  'Cromatógrafo', 'Flare', 'RCI', 'Iluminación', 'Tableros eléctricos', 'Sala de Control', 'Otros Equipos o Instalaciones'];
+
+const PRIO = [
+  { v: 'Urgente', w: 'Inmediato', c: '#c62828' },
+  { v: 'Alta', w: '2 días a 2 semanas', c: '#e4572e' },
+  { v: 'Media', w: '2 semanas a 2 meses', c: '#c98a00' },
+  { v: 'Paro de Planta', w: 'Parada de planta', c: '#7b4bb7' },
+  { v: 'Bajo', w: 'Más de 2 meses', c: '#2e8b57' },
+  { v: 'Plan de Mantenimiento', w: 'Plan de mantenimiento', c: '#3d6fa8' },
+];
+const ESTADOS = [
+  { v: 'En Servicio', c: '#1f8a4c' },
+  { v: 'Fuera de Servicio', c: '#c62828' },
+  { v: 'En Mantenimiento', c: '#c98a00' },
+  { v: 'Stand by', c: '#3d6fa8' },
+];
+
+/* ---------- Motocompresores (MC#1, 2, 3, 5, 6) ---------- */
+const MC_GROUPS = [
+  { t: 'Presiones y caudal', f: [
+    num('pi5107', 'PI5107 Presión de succión'),
+    num('fi5107', 'DCSFI5107 Caudal gas en baja presión'),
+    num('p_succ', 'Presión de succión'),
+    num('p_d1', 'Presión descarga 1° etapa'),
+    num('p_d2', 'Presión descarga 2° etapa'),
+    num('p_d3', 'Presión descarga 3° etapa'),
+    num('p_ac_mot', 'Presión aceite motor'),
+    num('p_ac_comp', 'Presión aceite compresor'),
+    num('p_ref_pri', 'Presión refrigerante Sist. principal'),
+    num('p_ref_aux', 'Presión refrigerante Sist. auxiliar'),
+    num('p_air_izq', 'Presión manifold de aire Bco. izq.'),
+    num('p_carter', 'Presión carter'),
+    num('p_air_der', 'Presión manifold de aire Bco. der.'),
+  ] },
+  { t: 'Vibraciones', f: [
+    num('vib_mot_ac', 'Vibración motor lado acople'),
+    num('vib_mot_li', 'Vibración motor lado libre'),
+    num('vib_comp_ac', 'Vibración compresor lado acople'),
+    num('vib_comp_li', 'Vibración compresor lado libre'),
+    num('vib_cooler', 'Vibración cooler'),
+  ] },
+  { t: 'Temperaturas', f: [
+    num('t_ref_pri', 'Temperatura refrigerante Sist. principal'),
+    num('t_ref_aux', 'Temperatura refrigerante Sist. auxiliar'),
+    num('t_ac_comp', 'Temperatura aceite compresor'),
+    num('t_ac_mot', 'Temperatura aceite motor'),
+  ] },
+  { t: 'Temperatura descarga compresor (Throw)', cols: 4, f: grid('t_thr', 4) },
+  { t: 'Temperatura cojinetes de bancada del motor', cols: 4, f: grid('t_coj', 7) },
+  { t: 'Temperatura entrada turbo, succión y ambiente', f: [
+    num('t_turbo_izq', 'Temperatura entrada turbo Bco. izq.'),
+    num('t_turbo_der', 'Temperatura entrada turbo Bco. der.'),
+    num('t_succ', 'Temperatura succión'),
+    num('t_amb', 'Temperatura ambiente'),
+  ] },
+  { t: 'Temperatura de escape por cilindro', cols: 4, f: grid('t_esc', 12) },
+  { t: 'Niveles', pcols: 4, f: [
+    optp('niv_ac_mot', 'Nivel de aceite motor', OKB),
+    optp('niv_ac_comp', 'Nivel aceite compresor', OKB),
+    optp('niv_ref_pri', 'Nivel refrigerante principal', OKB),
+    optp('niv_ref_aux', 'Nivel refrigerante auxiliar', OKB),
+  ] },
+];
+
+/* ---------- Recompresores (RC#4, 7, 8) ---------- */
+const RC_GROUPS = [
+  { t: 'Motor', f: [
+    num('rpm', 'R.P.M. motor'),
+    num('dp_ac_mot', 'Presión diferencial filtros aceite motor'),
+    num('p_ac_mot', 'Presión aceite motor (tablero)'),
+    num('t_ac_mot', 'Temperatura aceite motor'),
+    num('t_agua', 'Temperatura agua principal'),
+    num('t_adm_izq', 'Temperatura admisión motor banco izq.'),
+    num('t_adm_der', 'Temperatura admisión motor banco der.'),
+    num('p_mult_izq', 'Presión múltiple admisión izquierdo'),
+    num('p_mult_der', 'Presión múltiple admisión derecho'),
+  ] },
+  { t: 'Compresor', f: [
+    num('q_succ', 'Caudal de succión'),
+    num('p_succ', 'Presión succión compresor'),
+    num('p_d_c1', 'Presión descarga compresor cilindro 1'),
+    num('p_d_c2', 'Presión descarga compresor cilindro 2'),
+    num('t_d_izq', 'Temperatura descarga cilindro izquierdo'),
+    num('t_d_der', 'Temperatura descarga cilindro derecho'),
+    num('p_ac_comp_tab', 'Presión aceite compresor (tablero)'),
+    num('p_ac_comp_ent', 'Presión aceite compresor entrada'),
+    num('p_ac_comp_sal', 'Presión aceite compresor salida'),
+    num('t_ac_comp', 'Temperatura aceite compresor'),
+  ] },
+  { t: 'Ambiente y filtros de aire', f: [
+    num('t_amb', 'Temperatura ambiente'),
+    opt('fa_der', 'Filtros de aire derecho', OKS),
+    opt('fa_izq', 'Filtros de aire izquierdo', OKS),
+  ] },
+];
+
+/* ---------- Recompresor RC#9 ---------- */
+const RC9_GROUPS = [
+  { t: 'Motor', f: [
+    num('rpm', 'R.P.M. motor'),
+    num('dp_ac_mot', 'Presión diferencial filtros aceite motor'),
+    num('p_ac_mot', 'Presión aceite motor'),
+    num('t_agua', 'Temperatura agua principal'),
+    num('t_ac_mot', 'Temperatura aceite motor'),
+  ] },
+  { t: 'Compresor', f: [
+    num('q_succ', 'Caudal de succión'),
+    num('p_succ', 'Presión succión compresor 1st'),
+    num('p_desc', 'Presión descarga compresor 1st'),
+    num('p_ac_comp', 'Presión aceite compresor'),
+    num('p_ac_ent', 'Presión aceite compresor entrada'),
+    num('p_ac_sal', 'Presión aceite compresor salida'),
+    num('t_succ', 'Temperatura succión compresor'),
+    num('t_d1', 'Temperatura descarga cilindro 1'),
+    num('t_d2', 'Temperatura descarga cilindro 2'),
+    num('t_ac_comp', 'Temperatura aceite compresor'),
+  ] },
+  { t: 'Ambiente y filtros de aire', f: [
+    num('t_amb', 'Temperatura ambiente'),
+    opt('fa_der', 'Filtros de aire derecho', OKS),
+    opt('fa_izq', 'Filtros de aire izquierdo', OKS),
+  ] },
+];
+
+/* ---------- TurboExpander: se carga en el orden de recorrido (numeración manuscrita del papel, 1 a 36) ---------- */
+const TURBO_GROUPS = [{ t: '', f: [
+  num('lube_p', 'Presión aceite lubricante (Lube Oil P) PI-3'),
+  num('res_p', 'Presión reservorio (Reservoir P) PI-2'),
+  num('exp_wheel_p', 'Presión rueda expansor (Exp. Wheel P) PI-4'),
+  num('seal_p', 'Presión gas de sello (Seal Gas P) PI-5'),
+  num('seal_dp', 'Diferencia de presión gas de sello (Seal Gas DP)'),
+  num('lube_dp', 'Diferencia de presión aceite lubricante (Lube Oil DP)'),
+  num('seal_q', 'Caudal gas de sello FI-1'),
+  num('seal_in_t', 'Temperatura entrada gas de sello (Seal Gas In T)'),
+  num('res_t', 'Temperatura reservorio (Reservoir T)'),
+  num('lube_in_t', 'Temperatura entrada aceite lubricante (Lube Oil In T)'),
+  num('res_nivel', 'Nivel aceite reservorio'),
+  num('seal_sup_t', 'T° suministro gas de sello'),
+  num('seal_sup_p', 'Presión suministro gas de sello'),
+  num('comp_out_p', 'Presión salida compresor (Comp. Out P) PI-307'),
+  num('comp_out_t', 'Temperatura salida compresor (Comp. Out T)'),
+  num('drain_t', 'Temperatura aceite drenaje (Oil Drain T)'),
+  num('exp_thrust', 'Presión empuje expansor (Drive Bearing Thrust PI-6)'),
+  num('comp_wheel_p', 'Presión rueda compresor (Comp. Wheel P) PI-8'),
+  num('comp_thrust', 'Presión empuje compresor (Load Bearing Thrust PI-7)'),
+  num('exp_brg_t', 'Temperatura cojinetes expansor (Exp. Brg. T)'),
+  num('comp_brg_t', 'Temperatura cojinetes compresor (Comp. Brg. T)'),
+  num('exp_vib', 'Vibración X expansor (Exp. Vib. X)'),
+  num('comp_vib', 'Vibración X compresor (Comp. Vib. X)'),
+  num('exp_in_p', 'Presión entrada expansor (Exp. In P) (PIC 301B)'),
+  num('exp_in_t', 'Temperatura entrada expansor (Exp. In T) (TI0314)'),
+  num('exp_out_p', 'Presión salida expansor (Exp. Out P) (PIC 306)'),
+  num('exp_out_t', 'Temperatura salida expansor (Exp. Out T) (TI0326)'),
+  num('comp_in_p', 'Presión entrada compresor (Comp. In P) PI-309 (PIC0302)'),
+  num('comp_in_t', 'Temperatura entrada compresor (Comp. In T) TI0301'),
+  num('rpm', 'RPM'),
+  num('aletas', '% Aletas guías (PIC0301B)', '%'),
+  num('jt', 'JT % (PIC0301A)', '%'),
+  num('reciclo', 'Reciclo FIC0301 (Recycle %) porcentaje de apertura', '%'),
+  num('caudal_pct', 'Valor de caudal', '%'),
+  num('flujo_exp', 'Flujo expansor (FIC0101)'),
+  num('flujo_comp', 'Flujo compresor (FI0102+FIC0201)'),
+  num('t_amb', 'T° ambiente (TI0100)', '°F'),
+] }];
+// En el TurboExpander cualquier lectura puede ser negativa (JT, temperaturas, diferenciales), salvo RPM y nivel
+TURBO_GROUPS.forEach(g => g.f.forEach(f => { if (f.t === 'n' && f.k !== 'rpm' && f.k !== 'res_nivel') f.neg = true; }));
+
+// Orden en que están impresas las filas de la planilla original en papel (sin contar los números del costado); lo usa el PDF
+const TURBO_PDF_ORDER = ['exp_in_p', 'exp_in_t', 'exp_out_p', 'exp_out_t', 'exp_wheel_p', 'comp_in_p', 'comp_in_t', 'comp_out_p', 'comp_out_t',
+  'comp_wheel_p', 'exp_thrust', 'comp_thrust', 'res_p', 'res_t', 'lube_p', 'lube_dp', 'seal_p', 'seal_dp', 'rpm', 'exp_brg_t', 'comp_brg_t',
+  'exp_vib', 'comp_vib', 'lube_in_t', 'drain_t', 'seal_in_t', 'aletas', 'jt', 'reciclo', 'caudal_pct', 'flujo_exp', 'flujo_comp', 't_amb',
+  'seal_sup_p', 'seal_sup_t', 'seal_q', 'res_nivel'];
+
+/* ---------- Frick K-401 A / B ---------- */
+const FRICK_GROUPS = [{ t: '', f: [
+  num('p_succ', 'Presión de succión', 'bar'),
+  num('t_succ', 'Temperatura de succión', '°C'),
+  num('p_desc', 'Presión de descarga', 'bar'),
+  num('t_desc', 'Temperatura de descarga', '°C'),
+  num('p_ac', 'Presión de aceite compresor', 'bar'),
+  num('t_ac', 'Temperatura de aceite compresor', '°C'),
+  num('dp_filtro', 'Diferencial del filtro', 'bar'),
+  num('t_sep', 'Temperatura de separador', '°C'),
+  num('amp', 'Ampers motor', 'A'),
+  num('fla', 'Máxima carga ampers motor FLA', '%'),
+  num('kw', 'Kilowatts del motor', 'kW'),
+  num('desl_cap', 'Capacidad de deslizamiento', '%'),
+  num('desl_vol', 'Volumen de deslizamiento', '%'),
+  num('caudal', 'Caudal', 'm³/día'),
+  num('t_amb', 'Temperatura ambiente', '°C'),
+  num('horas', 'Horas trabajo motor', 'h'),
+] }];
+
+/* ---------- Tanques 1 a 7 ---------- */
+const TANQUES = [
+  [1, 'Tanque 1 (Propano fuera de especificación)'],
+  [2, 'Tanque 2 (Butano fuera de especificación)'],
+  [3, 'Tanque 3 (Butano)'],
+  [4, 'Tanque 4 (Butano)'],
+  [5, 'Tanque 5 (Propano)'],
+  [6, 'Tanque 6 (Propano)'],
+  [7, 'Tanque 7 (Gasolina)'],
+];
+const TANQ_GROUPS = TANQUES.map(([i, name]) => ({ t: name, pcols: 4, f: [
+  tog('t' + i + '_carga', 'En carga'),
+  num('t' + i + '_niv', 'Nivel', 'cm'),
+  ...(i < 7 ? [num('t' + i + '_p', 'Presión', 'kg/cm²'), num('t' + i + '_t', 'Temperatura', '°C')] : []),
+] }));
+
+/* ---------- Niveles de aceite ---------- */
+const ACEITE_GROUPS = [
+  ...['MC#1', 'MC#2', 'MC#3', 'MC#5', 'MC#6', 'RC#4', 'RC#7', 'RC#8'].map(n => {
+    const k = n.replace('#', '').toLowerCase();
+    return { t: n, cols: 2, f: [num(k + '_mot', 'Lado motor', 'cm'), num(k + '_comp', 'Lado compresor', 'cm')] };
+  }),
+  { t: 'RC#9', cols: 2, f: [num('rc9', 'Nivel de aceite', 'cm')] },
+  { t: 'Cisterna de aceite', cols: 2, f: [num('cist', 'Nivel de cisterna', 'cm')] },
+];
+
+/* ---------- Carga de aceite (mismo formato que Niveles de aceite) ---------- */
+const CARGA_ACEITE_GROUPS = [
+  { t: 'Cisterna general de aceite', pcols: 4, f: [cis('cist_i', 'cist_f', 'Cisterna')] },
+  ...['MC#1', 'MC#2', 'MC#3', 'MC#5', 'MC#6', 'RC#4', 'RC#7', 'RC#8'].map(n => {
+    const k = n.replace('#', '').toLowerCase();
+    return { t: n, pcols: 4, f: [vis(k + '_mot', 'Lado motor'), vis(k + '_comp', 'Lado compresor')] };
+  }),
+  { t: 'RC#9', pcols: 4, f: [vis('rc9', 'Compensador')] },
+
+];
+
+/* ---------- Prueba semanal de RCI ---------- */
+const RCI_GROUPS = [
+  { t: 'P-402 electrobomba 120 m³', f: [
+    num('p402_ps', 'P succión', 'kg/cm²'), num('p402_pd', 'P descarga', 'kg/cm²'), txt('p402_obs', 'Observaciones'),
+  ] },
+  { t: 'P-401 electrobomba 500 m³', f: [
+    num('p401_ps', 'P succión', 'kg/cm²'), num('p401_pd', 'P descarga', 'kg/cm²'), txt('p401_obs', 'Observaciones'),
+  ] },
+  { t: 'P-401 B motobomba Volvo', f: [
+    num('vo_ps', 'P succión', 'kg/cm²'), num('vo_pd', 'P descarga', 'kg/cm²'), num('vo_pac', 'P aceite', 'PSI'),
+    num('vo_trefri', 'T° refrigerante', '°C'), num('vo_rpm', 'RPM'), num('vo_tamb', 'T ambiente', '°C', { neg: true }),
+    num('vo_i1', 'Corriente 1', 'A'), num('vo_v1', 'Voltaje 1', 'V'),
+    num('vo_i2', 'Corriente 2', 'A'), num('vo_v2', 'Voltaje 2', 'V'),
+    num('vo_gasoil', 'Nivel de gas oil', 'L'),
+    opt('vo_refri', '¿Nivel de refrigerante OK?', SN), opt('vo_aceite', '¿Nivel de aceite OK?', SN),
+    txt('vo_obs', 'Observaciones'),
+  ] },
+  { t: 'Motobomba Cummins', f: [
+    num('cu_pd', 'P descarga', 'kg/cm²'), num('cu_pac', 'P aceite', 'kg/cm²'), num('cu_trefri', 'T° refrigerante', '°C'),
+    num('cu_horom', 'Horómetro', 'h'), num('cu_carg', 'Corriente en cargador de batería', 'A'),
+    num('cu_gasoil', 'Nivel de gas oil', 'L'), num('cu_rpm', 'RPM'),
+    opt('cu_refri', '¿Nivel de refrigerante OK?', SN), opt('cu_aceite', '¿Nivel de aceite OK?', SN),
+    txt('cu_obs', 'Observaciones'),
+  ] },
+  { t: 'Motobomba Hidro-Frac', f: [
+    num('hf_ps', 'P succión', 'kg/cm²'), num('hf_pd', 'P descarga', 'kg/cm²'),
+    opt('hf_refri', '¿Nivel de refrigerante OK?', SN), opt('hf_aceite', '¿Nivel de aceite OK?', SN),
+    txt('hf_obs', 'Observaciones'),
+  ] },
+  { t: 'Equipamientos adicionales', f: [
+    txt('equip_obs', 'Observaciones de hidrantes, mangueras y otros equipamientos'),
+  ] },
+  { t: 'Tanques', f: [
+    num('tk401a', 'TK-401A nivel', 'm'), num('tk_aus', 'Tanque australiano nivel', '%'),
+  ] },
+];
+
+/* ---------- Índice de planillas (el orden es el orden del informe) ---------- */
+const SHEETS = [];
+const addSheet = o => SHEETS.push(Object.assign({ kind: 'form' }, o));
+[4, 7, 8].forEach(n => addSheet({ id: 'rc' + n, carpeta: 'RECOMPRESORES', grp: 'Recompresores', title: 'RC#' + n, fluid: 'gas', groups: RC_GROUPS }));
+addSheet({ id: 'rc9', carpeta: 'RECOMPRESORES', grp: 'Recompresores', title: 'RC#9', fluid: 'gas', groups: RC9_GROUPS });
+addSheet({ id: 'turbo', carpeta: 'TURBOEXPANDER', grp: 'TurboExpander y tanques', title: 'TurboExpander', fluid: 'gas', groups: TURBO_GROUPS, pdfLayout: 'lista', pdfOrder: TURBO_PDF_ORDER });
+addSheet({ id: 'tanques', carpeta: 'TANQUES', grp: 'TurboExpander y tanques', title: 'Tanques', fluid: 'gas', groups: TANQ_GROUPS });
+// Ocultos por ahora para la presentación al jefe de planta (fácil de reactivar: descomentar la línea).
+// addSheet({ id: 'equipos', carpeta: 'REPORTES DE EQUIPOS', kind: 'list', grp: 'Reportes y aceite', title: 'Reportes de equipos', fluid: 'steel', unit: ['reporte', 'reportes'] });
+addSheet({ id: 'cargas', carpeta: 'CARGA DE ACEITE', grp: 'Carga de aceite', title: 'Carga de aceite', fluid: 'oil', groups: CARGA_ACEITE_GROUPS, cols: 2 });
+// addSheet({ id: 'aceite', carpeta: 'NIVELES DE ACEITE', grp: 'Reportes y aceite', title: 'Niveles de aceite', fluid: 'oil', groups: ACEITE_GROUPS, cols: 2 });
+[1, 2, 3, 5, 6].forEach(n => addSheet({ id: 'mc' + n, carpeta: 'MOTOCOMPRESORES', grp: 'Motocompresores', title: 'MC#' + n, fluid: 'gas', groups: MC_GROUPS }));
+// addSheet({ id: 'frickA', carpeta: 'FRICK', grp: 'Otros equipos', title: 'Frick K-401A', fluid: 'gas', groups: FRICK_GROUPS });
+// addSheet({ id: 'frickB', carpeta: 'FRICK', grp: 'Otros equipos', title: 'Frick K-401B', fluid: 'gas', groups: FRICK_GROUPS });
+// addSheet({ id: 'rci', carpeta: 'RCI', grp: 'Seguridad', title: 'Prueba semanal de RCI', fluid: 'fire', groups: RCI_GROUPS, photos: { key: 'fotosRci', max: 6 } });
+
+
+// En las carpetas que reúnen varios equipos (RC, MC, Frick) el nombre del equipo va al final del nombre del archivo
+SHEETS.forEach(sh => { sh.multi = SHEETS.filter(x => x.carpeta === sh.carpeta).length > 1; });
+const DRIVE_ROOT = 'DATOS';
+const BY = Object.fromEntries(SHEETS.map(s => [s.id, s]));
+const GROUP_ORDER = [...new Set(SHEETS.map(s => s.grp))];
+
+/* ---------- Utilidades compartidas ---------- */
+function entryHasData(e) {
+  return !!(e.tipo || e.tag || e.prioridad || e.ubicacion || e.estado || e.litros || e.obs || (e.fotos && e.fotos.length));
+}
+function sheetHasData(S, sh) {
+  if (sh.kind === 'list') return (S[sh.id] || []).some(entryHasData);
+  const v = S.v && S.v[sh.id];
+  if (v && Object.keys(v).length) return true;
+  return !!(sh.photos && (S[sh.photos.key] || []).length);
+}
+function summarize(S) {
+  let planillas = 0, equipos = 0, cargas = 0, fotos = (S.fotosRci || []).length;
+  for (const sh of SHEETS) if (sh.kind === 'form' && sheetHasData(S, sh)) planillas++;
+  for (const e of S.equipos || []) if (entryHasData(e)) { equipos++; fotos += (e.fotos || []).length; }
+  for (const e of S.cargas || []) if (entryHasData(e)) { cargas++; fotos += (e.fotos || []).length; }
+  return { planillas, equipos, cargas, fotos };
+}
+function summaryText(r) {
+  const p = [];
+  if (r.planillas) p.push(r.planillas + (r.planillas === 1 ? ' planilla' : ' planillas'));
+  if (r.equipos) p.push(r.equipos + (r.equipos === 1 ? ' reporte de equipo' : ' reportes de equipos'));
+  if (r.cargas) p.push(r.cargas + (r.cargas === 1 ? ' carga de aceite' : ' cargas de aceite'));
+  if (r.fotos) p.push(r.fotos + (r.fotos === 1 ? ' foto' : ' fotos'));
+  return p.length ? p.join(', ') : 'Sin datos';
+}
+function fmtFecha(s) {
+  const m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(s || '');
+  return m ? m[3] + '/' + m[2] + '/' + m[1] + ' ' + m[4] + ':' + m[5] : (s || '');
+}
+function toNum(s) {
+  const n = parseFloat(String(s).replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
+/* ===== Generador de PDF sin dependencias (Helvetica + JPEG) ===== */
+// Anchos Helvetica (AFM) para los caracteres 32..126, en milésimas de em
+const HR = [].concat(
+  [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278],
+  Array(10).fill(556),
+  [278, 278, 584, 584, 584, 556, 1015],
+  [667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611],
+  [278, 278, 278, 469, 556, 333],
+  [556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500],
+  [334, 260, 334, 584]);
+const HB = [].concat(
+  [278, 333, 474, 556, 556, 889, 722, 238, 333, 333, 389, 584, 278, 333, 278, 278],
+  Array(10).fill(556),
+  [333, 333, 584, 584, 584, 611, 975],
+  [722, 722, 722, 722, 667, 611, 778, 722, 278, 556, 722, 611, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611],
+  [333, 278, 333, 584, 556, 333],
+  [556, 611, 556, 611, 556, 333, 611, 611, 278, 278, 556, 278, 889, 611, 611, 611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500],
+  [389, 280, 389, 584]);
+const EXTRA_W = { '°': 400, '²': 333, '³': 333, '·': 278, '—': 1000, '–': 556, '•': 350, '…': 1000, '¿': 611, '¡': 333, 'º': 365, 'ª': 370, '€': 556, '’': 222, '‘': 222, '“': 333, '”': 333 };
+const WIN1252 = { '€': 0x80, '…': 0x85, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97, '™': 0x99 };
+
+function chW(ch, bold) {
+  const c = ch.charCodeAt(0);
+  if (c >= 32 && c <= 126) return (bold ? HB : HR)[c - 32];
+  if (EXTRA_W[ch] !== undefined) return EXTRA_W[ch];
+  const b = ch.normalize('NFD').charCodeAt(0);
+  if (b >= 32 && b <= 126) return (bold ? HB : HR)[b - 32];
+  return 556;
+}
+function tw(s, size, bold) { let w = 0; for (const ch of String(s)) w += chW(ch, bold); return w * size / 1000; }
+const f2 = n => String(Math.round(n * 100) / 100);
+
+// Cadena PDF en WinAnsi; todo byte no ASCII sale como escape octal
+function pdfStr(s) {
+  let o = '';
+  for (const ch of String(s)) {
+    let c = ch.codePointAt(0);
+    if (WIN1252[ch] !== undefined) c = WIN1252[ch];
+    else if (c > 255) c = 63;
+    if (c === 40 || c === 41 || c === 92) o += '\\' + String.fromCharCode(c);
+    else if (c < 32) o += ' ';
+    else if (c < 127) o += String.fromCharCode(c);
+    else o += '\\' + c.toString(8).padStart(3, '0');
+  }
+  return '(' + o + ')';
+}
+
+function wrapText(s, maxW, size, bold) {
+  const out = [];
+  for (const para of String(s).split(/\r?\n/)) {
+    let line = '';
+    for (const word of para.split(/\s+/)) {
+      if (!word) continue;
+      const t = line ? line + ' ' + word : word;
+      if (tw(t, size, bold) <= maxW) { line = t; continue; }
+      if (line) out.push(line);
+      if (tw(word, size, bold) > maxW) {
+        let chunk = '';
+        for (const ch of word) {
+          if (tw(chunk + ch, size, bold) > maxW) { out.push(chunk); chunk = ch; } else chunk += ch;
+        }
+        line = chunk;
+      } else line = word;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+class Pdf {
+  constructor() { this.W = 595.28; this.H = 841.89; this.pages = []; this.imgs = []; this.c = null; }
+  page() { this.c = []; this.pages.push(this.c); return this.pages.length - 1; }
+  on(i) { this.c = this.pages[i]; }
+  rgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => f2(v / 255)).join(' ');
+  }
+  rect(x, y, w, h, hex) {
+    this.c.push(this.rgb(hex) + ' rg ' + f2(x) + ' ' + f2(this.H - y - h) + ' ' + f2(w) + ' ' + f2(h) + ' re f');
+  }
+  line(x1, y1, x2, y2, hex, lw) {
+    this.c.push(this.rgb(hex) + ' RG ' + f2(lw || 0.5) + ' w ' + f2(x1) + ' ' + f2(this.H - y1) + ' m ' + f2(x2) + ' ' + f2(this.H - y2) + ' l S');
+  }
+  text(s, x, y, size, o) {
+    o = o || {};
+    const bold = !!o.bold;
+    if (o.align === 'r') x -= tw(s, size, bold);
+    else if (o.align === 'c') x -= tw(s, size, bold) / 2;
+    this.c.push(this.rgb(o.color || '#000000') + ' rg BT /' + (bold ? 'F2' : 'F1') + ' ' + f2(size) + ' Tf ' + f2(x) + ' ' + f2(this.H - y) + ' Td ' + pdfStr(s) + ' Tj ET');
+  }
+  image(idx, x, y, w, h) {
+    this.c.push('q ' + f2(w) + ' 0 0 ' + f2(h) + ' ' + f2(x) + ' ' + f2(this.H - y - h) + ' cm /Im' + idx + ' Do Q');
+  }
+  addImage(dataUrl, w, h) {
+    const bin = atob(dataUrl.slice(dataUrl.indexOf(',') + 1));
+    const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    this.imgs.push({ u, w, h });
+    return this.imgs.length - 1;
+  }
+  build() {
+    const enc = new TextEncoder(), parts = [], offs = [];
+    let pos = 0;
+    const add = x => { const u = typeof x === 'string' ? enc.encode(x) : x; parts.push(u); pos += u.length; };
+    const nI = this.imgs.length, nP = this.pages.length, total = 5 + nI + 2 * nP;
+    const contN = p => 6 + nI + 2 * p, pageN = p => 6 + nI + 2 * p + 1;
+    const obj = (n, dict, stream) => {
+      offs[n] = pos;
+      add(n + ' 0 obj\n' + dict + '\n');
+      if (stream) { add('stream\n'); add(stream); add('\nendstream\n'); }
+      add('endobj\n');
+    };
+    add('%PDF-1.4\n');
+    add(new Uint8Array([37, 226, 227, 207, 211, 10]));
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [' + this.pages.map((_, p) => pageN(p) + ' 0 R').join(' ') + '] /Count ' + nP + ' >>');
+    obj(3, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    obj(4, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    obj(5, '<< /Font << /F1 3 0 R /F2 4 0 R >> /XObject << ' + this.imgs.map((_, i) => '/Im' + i + ' ' + (6 + i) + ' 0 R').join(' ') + ' >> >>');
+    this.imgs.forEach((im, i) => obj(6 + i,
+      '<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.u.length + ' >>', im.u));
+    this.pages.forEach((ops, p) => {
+      const s = enc.encode(ops.join('\n'));
+      obj(contN(p), '<< /Length ' + s.length + ' >>', s);
+      obj(pageN(p), '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + f2(this.W) + ' ' + f2(this.H) + '] /Resources 5 0 R /Contents ' + contN(p) + ' 0 R >>');
+    });
+    const xr = pos;
+    add('xref\n0 ' + (total + 1) + '\n0000000000 65535 f \n');
+    for (let n = 1; n <= total; n++) add(String(offs[n]).padStart(10, '0') + ' 00000 n \n');
+    add('trailer\n<< /Size ' + (total + 1) + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF\n');
+    const out = new Uint8Array(pos);
+    let o = 0;
+    for (const u of parts) { out.set(u, o); o += u.length; }
+    return out;
+  }
+}
+
+/* ---------- Informe ---------- */
+// Cada apartado (planilla o lista de reportes) arranca en una hoja nueva y lleva su propio encabezado,
+// así se puede archivar por separado. opts.sheets limita el PDF a esos apartados.
+async function buildPdf(S, opts) {
+  const P = new Pdf();
+  const FECHA = (opts && opts.fecha) || S.fecha;
+  const L = 36, CW = P.W - 72, BOT = P.H - 52;
+  const INK = '#000000', GRAY = '#1f1f1f', RULE = '#8a8a8a', NAVY = '#000000';
+  const RED = '#b00020', GREEN = '#000000', AMB = '#8a4b00', MUTE = '#666666';
+  let y = 0;
+  const newPage = () => { P.page(); y = 58; };
+  const need = h => { if (y + h > BOT) newPage(); };
+  const vOf = (sh, k) => ((S.v || {})[sh.id] || {})[k] || '';
+
+  function heading(t) {
+    P.text(t, L, y + 11, 11, { bold: true, color: NAVY });
+    P.line(L, y + 15, L + CW, y + 15, INK, 0.9);
+    y += 21;
+  }
+  function drawCells(items, cols) {
+    const cw = CW / cols;
+    for (let i = 0; i < items.length; i += cols) {
+      const row = items.slice(i, i + cols);
+      const labs = row.map(it => wrapText(it.l, cw - 10, 8, false).slice(0, 3));
+      const lh = Math.max(...labs.map(a => a.length)) * 9.6;
+      const rh = lh + 18;
+      need(rh + 3);
+      row.forEach((it, j) => {
+        const x = L + j * cw;
+        labs[j].forEach((ln, k) => P.text(ln, x, y + 9 + k * 9.6, 8, { color: GRAY }));
+        const has = it.v !== undefined && it.v !== null && String(it.v) !== '';
+        let vt = has ? String(it.v) : '—';
+        if (has && it.u) vt += ' ' + it.u;
+        while (tw(vt, 10.5, true) > cw - 10 && vt.length > 2) vt = vt.slice(0, -2) + '…';
+        const color = !has ? MUTE : it.bad ? RED : it.warn ? AMB : it.good ? GREEN : INK;
+        P.text(vt, x, y + lh + 13, 11, { bold: has, color });
+      });
+      P.line(L, y + rh, L + CW, y + rh, RULE, 0.5);
+      y += rh + 3;
+    }
+  }
+  function drawArea(label, text) {
+    need(26);
+    P.text(label, L, y + 9, 8, { color: GRAY });
+    y += 12;
+    for (const ln of wrapText(text, CW, 9.5, false)) {
+      need(13);
+      P.text(ln, L, y + 9, 9.5, { color: INK });
+      y += 12;
+    }
+    y += 3;
+    P.line(L, y, L + CW, y, RULE, 0.5);
+    y += 5;
+  }
+  function drawPhotos(list) {
+    const gap = 8, per = 3, bw = (CW - gap * (per - 1)) / per, bh = 132;
+    for (let i = 0; i < list.length; i += per) {
+      const row = list.slice(i, i + per);
+      const dims = row.map(p => {
+        const ar = p.w / p.h;
+        let w = bw, h = w / ar;
+        if (h > bh) { h = bh; w = h * ar; }
+        return { w, h };
+      });
+      const rh = Math.max(...dims.map(d => d.h));
+      need(rh + 8);
+      row.forEach((p, j) => P.image(P.addImage(p.d, p.w, p.h), L + j * (bw + gap), y, dims[j].w, dims[j].h));
+      y += rh + 8;
+    }
+  }
+  function visorItems(f) {
+    const l = f.l;
+    return [
+      { k: f.vk, l: l + ': visor (%)', u: '%', t: 'n' },
+      { t: 'x', calc: 'tiene', src: f.vk, k: f.k + '_tiene', l: l + ': tenía (cm / L)' },
+      { t: 'x', calc: 'falta', src: f.vk, k: f.k + '_falta', l: l + ': faltaba al 100 %' },
+      { k: f.k, l: l + ': se cargó', u: 'litros', t: 'n' },
+    ];
+  }
+  function cisternItems(f) {
+    return [
+      { t: 'y', calc: 'ini', f, l: 'Medida inicial (cm / L)' },
+      { t: 'y', calc: 'fin', f, l: 'Medida final (cm / L)' },
+      { t: 'y', calc: 'car', f, l: 'Litros cargados a las máquinas' },
+      { t: 'y', calc: 'stk', f, l: 'Stock que queda en la cisterna' },
+    ];
+  }
+  function itemOf(sh, f) {
+    if (f.t === 'y') {
+      const ini = vOf(sh, f.f.k), fin = vOf(sh, f.f.k2), c = cistCalc(ini, fin);
+      const it = { l: f.l, v: '' };
+      if (f.calc === 'ini' && c.vi !== null) it.v = ini + ' cm / ' + fmtL(c.vi) + ' L';
+      else if (f.calc === 'fin' && c.vf !== null) it.v = fin + ' cm / ' + fmtL(c.vf) + ' L';
+      else if (f.calc === 'car') { if (c.invertida) { it.v = 'Revisar medidas'; it.bad = true; } else if (c.cargado !== null) it.v = fmtL(c.cargado) + ' L'; }
+      else if (f.calc === 'stk' && c.stock !== null) it.v = fmtL(c.stock) + ' L (' + fmt1(c.pct) + ' %)';
+      return it;
+    }
+    if (f.t === 'x') {
+      const c = compCalc(vOf(sh, f.src));
+      const cm = c ? (f.calc === 'tiene' ? c.hNow : c.hFalta) : 0, lt = c ? (f.calc === 'tiene' ? c.vNow : c.vFalta) : 0;
+      return { l: f.l, v: c ? fmt1(cm) + ' cm / ' + fmt1(lt) + ' L' : '', u: '' };
+    }
+    const v = vOf(sh, f.k);
+    const it = { l: f.l, v, u: f.u };
+    if (f.t === 'b') it.v = v ? 'Sí' : '';
+    if (f.t === 's' && v) {
+      if (v === 'Bajo' || v === 'No') it.bad = true;
+      else if (v === 'SAT') it.warn = true;
+      else it.good = true;
+    }
+    if (f.max != null && v !== '') { const n = toNum(v); if (n != null && n > f.max) it.bad = true; }
+    return it;
+  }
+  // Primera hoja de un apartado: encabezado completo (operador, legajo y fecha), para que cada apartado quede autosuficiente
+  function startApartado(title, fluid) {
+    P.page();
+    P.text('Datos KTI — Informe de turno', L, 34, 9.5, { color: GRAY });
+    P.text(title, L, 62, 24, { bold: true, color: INK });
+    P.text('Operador: ' + S.operador, P.W - L, 40, 11, { bold: true, color: INK, align: 'r' });
+    P.text('Legajo: ' + S.legajo, P.W - L, 54, 11, { color: INK, align: 'r' });
+    P.text('Fecha y hora: ' + fmtFecha(FECHA), P.W - L, 68, 11, { bold: true, color: INK, align: 'r' });
+    P.line(L, 78, P.W - L, 78, INK, 1.6);
+    y = 96;
+  }
+  // Una fila por lectura, de arriba hacia abajo: etiqueta a la izquierda y valor a la derecha, como en la planilla en papel
+  function drawList(items) {
+    const VW = 120, LW = CW - VW - 14;
+    for (const it of items) {
+      const lines = wrapText(it.l, LW, 9, false);
+      const rh = Math.max(lines.length * 10.5 + 6, 17);
+      need(rh + 2);
+      lines.forEach((ln, k) => P.text(ln, L, y + 11.5 + k * 10.5, 9, { color: INK }));
+      const has = it.v !== undefined && it.v !== null && String(it.v) !== '';
+      let vt = has ? String(it.v) : '—';
+      if (has && it.u) vt += ' ' + it.u;
+      const color = !has ? MUTE : it.bad ? RED : it.warn ? AMB : it.good ? GREEN : INK;
+      P.text(vt, P.W - L - 4, y + 11.5, 10.5, { bold: has, color, align: 'r' });
+      P.line(L, y + rh, L + CW, y + rh, RULE, 0.5);
+      y += rh + 1;
+    }
+  }
+  // Grupos que se imprimen: si la planilla define pdfOrder, va todo en un único grupo en ese orden
+  function groupsForPdf(sh) {
+    if (!sh.pdfOrder) return sh.groups;
+    const all = Object.fromEntries(sh.groups.flatMap(g => g.f).map(f => [f.k, f]));
+    return [{ t: '', f: sh.pdfOrder.map(k => all[k]).filter(Boolean) }];
+  }
+  function drawSheet(sh) {
+    for (const g of groupsForPdf(sh)) {
+      const cells = g.f.filter(f => f.t !== 'a').flatMap(f => f.pk ? [f, pctOf(f)] : f.t === 'v' ? visorItems(f) : f.t === 'c' ? cisternItems(f) : [f]);
+      const areas = g.f.filter(f => f.t === 'a' && vOf(sh, f.k));
+      if (!cells.length && !areas.length) continue;
+      if (sh.id === 'cargas' && !g.f.some(f => vOf(sh, f.k) || (f.vk && vOf(sh, f.vk)) || (f.k2 && vOf(sh, f.k2)))) continue;
+      need(g.t ? 52 : 34);
+      if (g.t) heading(g.t);
+      if (cells.length) {
+        const items = cells.map(f => itemOf(sh, f));
+        if (sh.pdfLayout === 'lista') drawList(items); else drawCells(items, g.pcols || g.cols || sh.cols || 3);
+      }
+      areas.forEach(a => drawArea(a.l, vOf(sh, a.k)));
+    }
+    if (sh.photos && (S[sh.photos.key] || []).length) {
+      need(40);
+      heading('Fotografías');
+      drawPhotos(S[sh.photos.key]);
+    }
+  }
+  function drawEntries(sh) {
+    const carga = sh.id === 'cargas';
+    (S[sh.id] || []).filter(entryHasData).forEach((e, i) => {
+      need(96);
+      P.text((carga ? 'Carga de aceite ' : 'Reporte ') + (i + 1), L, y + 11, 11.5, { bold: true, color: INK });
+      const pr = PRIO.find(p => p.v === e.prioridad);
+      if (pr) {
+        const t = 'Prioridad ' + pr.v + ' (' + pr.w + ')';
+        const w = tw(t, 8.5, true) + 14;
+        P.rect(P.W - L - w, y, w, 16, pr.c);
+        P.text(t, P.W - L - w + 7, y + 11.5, 8.5, { bold: true, color: '#ffffff' });
+      }
+      y += 24;
+      const est = { l: 'Estado del equipo', v: e.estado, bad: e.estado === 'Fuera de Servicio', warn: e.estado === 'En Mantenimiento', good: e.estado === 'En Servicio' };
+      drawCells(carga
+        ? [{ l: 'Número de TAG', v: e.tag }, { l: 'Ubicación', v: e.ubicacion }, est, { l: 'Carga de aceite', v: e.litros, u: 'litros' }]
+        : [{ l: 'Tipo de equipo', v: e.tipo }, { l: 'Número de TAG', v: e.tag }, { l: 'Ubicación', v: e.ubicacion }, est], 4);
+      if (e.obs) drawArea('Observaciones', e.obs);
+      if ((e.fotos || []).length) drawPhotos(e.fotos);
+      y += 12;
+    });
+  }
+
+  const list = ((opts && opts.sheets) || SHEETS).filter(sh => sheetHasData(S, sh));
+  const segs = [];
+  for (const sh of list) {
+    const from = P.pages.length;
+    startApartado(sh.title, sh.fluid);
+    if (sh.kind === 'list') drawEntries(sh); else drawSheet(sh);
+    segs.push({ title: sh.title, from, to: P.pages.length - 1 });
+  }
+  if (!segs.length) {
+    startApartado('Informe de turno', 'steel');
+    drawArea('Contenido', 'Sin datos cargados.');
+    segs.push({ title: 'Informe de turno', from: 0, to: 0 });
+  }
+  // Encabezado corrido y pie: la numeración es por apartado ("Hoja 1 de 2")
+  for (const g of segs) {
+    for (let i = g.from; i <= g.to; i++) {
+      P.on(i);
+      if (i > g.from) {
+        P.text('Datos KTI — ' + g.title, L, 32, 8.5, { bold: true, color: NAVY });
+        P.text('Operador: ' + S.operador + '   Legajo: ' + S.legajo + '   ' + fmtFecha(FECHA), P.W - L, 32, 8.5, { color: GRAY, align: 'r' });
+        P.line(L, 40, P.W - L, 40, INK, 0.8);
+      }
+      P.line(L, P.H - 38, P.W - L, P.H - 38, RULE, 0.5);
+      P.text('Datos KTI', L, P.H - 24, 8, { color: GRAY });
+      P.text('Hoja ' + (i - g.from + 1) + ' de ' + (g.to - g.from + 1), P.W - L, P.H - 24, 8, { color: GRAY, align: 'r' });
+    }
+  }
+  return new Blob([P.build()], { type: 'application/pdf' });
+}
+
+/* ===== ZIP sin compresión (carpetas + archivos) ===== */
+const CRC_T = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+  return t;
+})();
+function crc32(u8) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+// files: [{ name: 'Carpeta/', data: null }, { name: 'Carpeta/a.pdf', data: Uint8Array }]
+function makeZip(files) {
+  const enc = new TextEncoder(), chunks = [], central = [];
+  let pos = 0;
+  const d = new Date();
+  const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const dosDate = ((Math.max(d.getFullYear(), 1980) - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const u16 = n => [n & 255, (n >> 8) & 255];
+  const u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+  for (const f of files) {
+    const name = enc.encode(f.name), data = f.data || new Uint8Array(0);
+    const crc = f.data ? crc32(data) : 0, size = data.length;
+    const local = new Uint8Array([0x50, 0x4b, 0x03, 0x04, ...u16(20), ...u16(0x0800), ...u16(0), ...u16(dosTime), ...u16(dosDate),
+      ...u32(crc), ...u32(size), ...u32(size), ...u16(name.length), ...u16(0)]);
+    central.push({ name, crc, size, off: pos, dir: !f.data });
+    chunks.push(local, name, data);
+    pos += local.length + name.length + size;
+  }
+  const cdStart = pos;
+  for (const c of central) {
+    const hd = new Uint8Array([0x50, 0x4b, 0x01, 0x02, ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(dosTime), ...u16(dosDate),
+      ...u32(c.crc), ...u32(c.size), ...u32(c.size), ...u16(c.name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0),
+      ...u32(c.dir ? 0x10 : 0), ...u32(c.off)]);
+    chunks.push(hd, c.name);
+    pos += hd.length + c.name.length;
+  }
+  chunks.push(new Uint8Array([0x50, 0x4b, 0x05, 0x06, 0, 0, 0, 0, ...u16(central.length), ...u16(central.length), ...u32(pos - cdStart), ...u32(cdStart), 0, 0]));
+  return new Blob(chunks, { type: 'application/zip' });
+}
+
+/* ===== App ===== */
+const $ = (s, r = document) => r.querySelector(s);
+const MAXH = 30;
+let S, view = { name: 'home' }, HIST = [], LAST = {}, LASTDATE = {}, PREFS = {}, ULT = {}, DRIVEIDS = { root: '', f: {} }, MCP = null, MCP_ST = 'checking', FILEARGS = false, persist = true, statusText = '', saveT = null, menuOpen = false;
+
+/* ---------- Utilidades ---------- */
+function h(tag, a, ...kids) {
+  const e = document.createElement(tag);
+  if (a) for (const k in a) {
+    const v = a[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'style') e.setAttribute('style', v);
+    else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+    else if (k === 'value' || k === 'disabled' || k === 'hidden' || k === 'rows' || k === 'type') e[k] = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat(Infinity)) {
+    if (c == null || c === false) continue;
+    e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+  return e;
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const pad2 = n => String(n).padStart(2, '0');
+const nowLocal = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
+const hhmm = () => { const d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
+const clone = o => (typeof structuredClone === 'function' ? structuredClone(o) : JSON.parse(JSON.stringify(o)));
+const slug = s => s.toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
+function cleanNum(s) {
+  s = s.replace(/[^\d.,-]/g, '');
+  const neg = s.charAt(0) === '-';
+  s = s.replace(/-/g, '');
+  let seen = false;
+  s = s.replace(/[.,]/g, m => (seen ? '' : (seen = true, m)));
+  return (neg ? '-' : '') + s;
+}
+
+/* ---------- Almacenamiento local (IndexedDB) ---------- */
+const DB = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise(res => {
+    try {
+      const r = indexedDB.open('ptg-app', 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        d.createObjectStore('kv');
+        d.createObjectStore('informes', { keyPath: 'id' });
+        d.createObjectStore('full');
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+      r.onblocked = () => res(null);
+    } catch (e) { res(null); }
+  }));
+  const tx = async (store, mode, fn) => {
+    const d = await open();
+    if (!d) return null;
+    return new Promise(res => {
+      try {
+        const t = d.transaction(store, mode);
+        const r = fn(t.objectStore(store));
+        t.oncomplete = () => res(r && 'result' in r ? r.result : true);
+        t.onerror = t.onabort = () => res(null);
+      } catch (e) { res(null); }
+    });
+  };
+  return {
+    get: (s, k) => tx(s, 'readonly', o => o.get(k)),
+    put: (s, v, k) => tx(s, 'readwrite', o => (k === undefined ? o.put(v) : o.put(v, k))),
+    del: (s, k) => tx(s, 'readwrite', o => o.delete(k)),
+    all: s => tx(s, 'readonly', o => o.getAll()),
+  };
+})();
+
+/* ---------- Estado ---------- */
+function newState(perfil) {
+  return { id: uid(), fecha: nowLocal(), operador: (perfil && perfil.operador) || '', legajo: (perfil && perfil.legajo) || '', v: {}, equipos: [], cargas: [], fotosRci: [], guardadas: {} };
+}
+function normState(st) {
+  st.id = st.id || uid(); st.fecha = st.fecha || nowLocal();
+  st.operador = st.operador || ''; st.legajo = st.legajo || '';
+  st.v = st.v || {}; st.equipos = st.equipos || []; st.cargas = st.cargas || []; st.fotosRci = st.fotosRci || []; st.guardadas = st.guardadas || {};
+  for (const id of Object.keys(st.v)) {
+    const sh = BY[id];
+    if (!sh || sh.kind !== 'form') { delete st.v[id]; continue; }
+    const ks = new Set(sh.groups.flatMap(g => g.f.map(f => f.k)));
+    for (const k of Object.keys(st.v[id])) if (!ks.has(k)) delete st.v[id][k];
+    if (!Object.keys(st.v[id]).length) delete st.v[id];
+  }
+  return st;
+}
+const newEntry = () => ({ id: uid(), tipo: '', tag: '', prioridad: '', ubicacion: '', estado: '', litros: '', obs: '', fotos: [] });
+const hasAnyData = st => { const s = summarize(st); return !!(s.planillas || s.equipos || s.cargas || s.fotos); };
+
+function setStatus(t) { statusText = t; const el = $('#status'); if (el) el.textContent = t; }
+function touch() {
+  paintDest();
+  if (!persist) return;
+  clearTimeout(saveT);
+  setStatus('Guardando…');
+  saveT = setTimeout(save, 500);
+}
+async function save() {
+  clearTimeout(saveT); saveT = null;
+  const ok = await DB.put('kv', S, 'draft');
+  await DB.put('kv', { operador: S.operador, legajo: S.legajo }, 'perfil');
+  if (ok === null) { persist = false; setStatus('Este navegador no permite guardar el borrador'); }
+  else setStatus('Borrador guardado ' + hhmm());
+}
+function computeLast() {
+  LAST = {}; LASTDATE = {};
+  const ts = {};
+  for (const r of HIST) for (const sh of SHEETS) {
+    if (sh.kind !== 'form' || LAST[sh.id]) continue;
+    const v = r.v && r.v[sh.id];
+    if (v && Object.keys(v).length) { LAST[sh.id] = v; LASTDATE[sh.id] = r.fecha; ts[sh.id] = r.ts; }
+  }
+  // lo guardado planilla por planilla también cuenta como lectura anterior si es más reciente
+  for (const id of Object.keys(ULT)) {
+    const u = ULT[id];
+    if (BY[id] && u && u.v && Object.keys(u.v).length && (!ts[id] || u.ts > ts[id])) { LAST[id] = u.v; LASTDATE[id] = u.fecha; }
+  }
+}
+const val = (id, k) => (S.v[id] && S.v[id][k]) || '';
+const lastOf = (id, k) => (LAST[id] && LAST[id][k]) || '';
+function setVal(id, k, v) {
+  if (v === '') {
+    if (S.v[id]) { delete S.v[id][k]; if (!Object.keys(S.v[id]).length) delete S.v[id]; }
+  } else (S.v[id] = S.v[id] || {})[k] = v;
+  touch();
+  const p = $('#prog');
+  if (p && BY[id]) p.textContent = progText(BY[id]);
+}
+function stats(sh) {
+  if (sh.kind === 'list') { const n = S[sh.id].filter(entryHasData).length; return { n, total: 0, pct: n ? 100 : 0 }; }
+  const fs = sh.groups.flatMap(g => g.f).filter(f => f.t === 'n' || f.t === 's' || f.t === 'v' || f.t === 'c');
+  const v = S.v[sh.id] || {};
+  const n = fs.filter(f => v[f.k] || (f.vk && v[f.vk]) || (f.k2 && v[f.k2])).length;
+  return { n, total: fs.length, pct: fs.length ? Math.round(100 * n / fs.length) : 0 };
+}
+const progText = sh => { const s = stats(sh); return s.n + '/' + s.total; };
+
+/* ---------- Avisos y diálogos ---------- */
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 3600);
+}
+function ask(title, text, buttons, opts) {
+  return new Promise(res => {
+    const prev = document.activeElement;
+    const close = v => { ovl.remove(); document.removeEventListener('keydown', onKey); if (prev && prev.focus) prev.focus(); res(v); };
+    const onKey = e => { if (e.key === 'Escape') close(null); };
+    const ovl = h('div', { class: 'ovl', onclick: e => { if (e.target === ovl) close(null); } },
+      h('div', { class: 'dlg', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+        h('h2', null, title), text ? h('p', null, text) : null,
+        h('div', { class: 'dact' + (opts && opts.stack ? ' stack' : '') }, buttons.map(b =>
+          h('button', { class: 'btn ' + (b.kind || ''), type: 'button', onclick: () => close(b.id) }, b.sub ? [h('b', null, b.label), h('small', null, b.sub)] : b.label)))));
+    document.addEventListener('keydown', onKey);
+    document.body.append(ovl);
+    const f = ovl.querySelector('.btn.primary, .btn.danger');
+    if (f) f.focus();
+  });
+}
+let busyEl = null;
+function busy(on, msg) {
+  if (busyEl) { busyEl.remove(); busyEl = null; }
+  if (!on) return;
+  busyEl = h('div', { class: 'ovl busy', role: 'alert' }, h('div', { class: 'spin' }), h('div', null, msg || 'Un momento…'));
+  document.body.append(busyEl);
+}
+
+/* ---------- Navegación ---------- */
+function go(v, mode) {
+  view = v;
+  menuOpen = false;
+  $('#toast').classList.remove('show');
+  try { (mode === 'replace' ? history.replaceState : history.pushState).call(history, { v }, '', v.name === 'home' ? '#/' : '#/' + (v.id || v.name)); } catch (e) { /* sin historial en este contexto */ }
+  render();
+  window.scrollTo(0, 0);
+}
+function back() {
+  if (view.name === 'home') return;
+  if (history.state && history.state.v && history.length > 1) history.back();
+  else go({ name: 'home' }, 'replace');
+}
+window.addEventListener('popstate', e => {
+  $('#toast').classList.remove('show');
+  menuOpen = false;
+  const v = e.state && e.state.v;
+  view = v && (v.name !== 'sheet' || BY[v.id]) ? v : { name: 'home' };
+  render();
+  window.scrollTo(0, 0);
+});
+$('#navscrim').addEventListener('click', closeMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+function sizeHero() {
+  const hero = $('.hero');
+  if (!hero) return;
+  const tb = $('#topbar'), bb = $('#bottombar');
+  const tbH = tb ? tb.offsetHeight : 0;
+  const bbH = (bb && !bb.hidden) ? bb.offsetHeight : 0;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  hero.style.height = Math.max(360, vh - tbH - bbH) + 'px';
+}
+window.addEventListener('resize', () => { if (view.name === 'home') sizeHero(); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (view.name === 'home') sizeHero(); });
+function render(keep) {
+  const y = window.scrollY;
+  if (view.name === 'home') { S.equipos = S.equipos.filter(entryHasData); S.cargas = S.cargas.filter(entryHasData); }
+  renderTop();
+  const m = $('#main');
+  m.replaceChildren(...(view.name === 'home' ? homeView() : view.name === 'hist' ? histView() : view.name === 'turno' ? turnoView() : BY[view.id].kind === 'list' ? listView(BY[view.id]) : formView(BY[view.id])));
+  renderBottom();
+  sizeHero();
+  if (keep) window.scrollTo(0, y);
+}
+/* ---------- Panel de navegación ---------- */
+const ICONS = {
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 2"/></svg>',
+  gauge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16a7.5 7.5 0 1 1 15 0"/><path d="M12 16 15.8 9.8"/><circle cx="12" cy="16" r="1.4" fill="currentColor" stroke="none"/></svg>',
+  tank: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7.2c0-1.5 3.1-2.7 7-2.7s7 1.2 7 2.7v9.6c0 1.5-3.1 2.7-7 2.7s-7-1.2-7-2.7V7.2z"/><path d="M5 7.2c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7"/><path d="M5 14c0 1.5 3.1 2.7 7 2.7"/></svg>',
+  engine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="10" height="9" rx="1.2"/><path d="M6.3 7.5v9M9.7 7.5v9"/><path d="M13 12h3.3"/><circle cx="18.3" cy="12" r="2.5"/></svg>',
+  drop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c3 4 6 7.6 6 11a6 6 0 1 1-12 0c0-3.4 3-7 6-11z"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 20 8v8l-8 4.5L4 16V8l8-4.5z"/><circle cx="12" cy="12" r="3.1"/></svg>',
+  flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 2.5-.5 3.8-1.6 5C9 9.4 8 11 8 13a4 4 0 1 0 8 0c0-1.7-.9-2.7-1.6-3.7.1 1.2-.4 1.9-1 2.3.5-1.8-.8-2.9-.8-5C12.9 6 12.6 4.5 12 3z"/></svg>',
+};
+const GROUP_ICON = { 'Recompresores': 'gauge', 'TurboExpander y tanques': 'tank', 'Motocompresores': 'engine', 'Carga de aceite': 'drop', 'Otros equipos': 'bolt', 'Seguridad': 'flame' };
+const BRANDMARK = '<svg viewBox="0 0 40 40"><polygon points="20,3 35,11.5 35,28.5 20,37 5,28.5 5,11.5" fill="none" stroke="#fff" stroke-width="2"/><polygon points="20,9 29.3,14.4 29.3,25.6 20,31 10.7,25.6 10.7,14.4" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="1"/><text x="20" y="25.5" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-weight="700" font-size="15" fill="#fff">K</text></svg>';
+const PLANT_ART = `<svg viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs>
+  <linearGradient id="pa-sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#050e1f"/>
+    <stop offset="38%" stop-color="#0d2a52"/>
+    <stop offset="64%" stop-color="#3d5f86"/>
+    <stop offset="82%" stop-color="#c97a4a"/>
+    <stop offset="100%" stop-color="#f0ad5f"/>
+  </linearGradient>
+  <radialGradient id="pa-glow" cx="50%" cy="100%" r="60%">
+    <stop offset="0%" stop-color="#ffb066" stop-opacity=".5"/>
+    <stop offset="100%" stop-color="#ffb066" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="pa-flame" cx="50%" cy="100%" r="80%">
+    <stop offset="0%" stop-color="#fff3c4"/>
+    <stop offset="45%" stop-color="#ffb44b"/>
+    <stop offset="100%" stop-color="#e2632b"/>
+  </radialGradient>
+</defs>
+<rect x="0" y="0" width="800" height="1000" fill="url(#pa-sky)"/>
+<circle cx="480" cy="660" r="300" fill="url(#pa-glow)"/>
+<g fill="#fff" opacity=".55">
+  <circle cx="95" cy="90" r="2.2"/><circle cx="185" cy="150" r="1.6"/><circle cx="265" cy="70" r="1.8"/>
+  <circle cx="120" cy="230" r="1.4"/><circle cx="60" cy="170" r="1.5"/><circle cx="230" cy="110" r="1.3"/>
+</g>
+<path d="M0 665 Q120 625 260 655 T520 645 T800 660 V1000 H0 Z" fill="#132038" opacity=".65"/>
+<rect x="0" y="760" width="800" height="240" fill="#0a1524"/>
+<g transform="translate(400 0) scale(.84 1) translate(-400 0)">
+<g fill="#0d1b2e">
+  <rect x="120" y="690" width="10" height="80"/><rect x="220" y="690" width="10" height="80"/>
+  <rect x="320" y="690" width="10" height="80"/><rect x="420" y="690" width="10" height="80"/>
+</g>
+<g stroke="#0d1b2e" stroke-width="6">
+  <line x1="110" y1="705" x2="440" y2="705"/><line x1="110" y1="727" x2="440" y2="727"/>
+</g>
+<rect x="90" y="600" width="260" height="170" fill="#0d1b2e"/>
+<rect x="90" y="588" width="260" height="14" fill="#0a1524"/>
+<rect x="140" y="562" width="14" height="32" fill="#0d1b2e"/>
+<rect x="182" y="550" width="14" height="44" fill="#0d1b2e"/>
+<rect x="300" y="568" width="14" height="26" fill="#0d1b2e"/>
+<g fill="#0d1b2e">
+  <rect x="380" y="520" width="34" height="250" rx="16"/>
+  <rect x="430" y="558" width="30" height="212" rx="15"/>
+  <rect x="475" y="498" width="36" height="272" rx="17"/>
+</g>
+<g fill="#0d1b2e">
+  <circle cx="580" cy="700" r="52"/>
+  <circle cx="668" cy="716" r="40"/>
+</g>
+<g stroke="#0d1b2e" stroke-width="6" stroke-linecap="round">
+  <line x1="553" y1="746" x2="543" y2="770"/><line x1="580" y1="752" x2="580" y2="770"/><line x1="607" y1="746" x2="617" y2="770"/>
+  <line x1="648" y1="749" x2="641" y2="770"/><line x1="668" y1="756" x2="668" y2="770"/><line x1="688" y1="749" x2="695" y2="770"/>
+</g>
+<rect x="637" y="378" width="10" height="382" fill="#0d1b2e"/>
+<rect x="620" y="418" width="44" height="8" fill="#0d1b2e"/>
+<circle cx="642" cy="345" r="72" fill="#ffb44b" opacity=".14"/>
+<path d="M642 296c11 17 27 29 27 53a27 27 0 0 1-54 0c0-15 9-23 15-35-1 10 4 16 8 19-3-14 2-25 4-37z" fill="url(#pa-flame)"/>
+</g>
+</svg>`;
+const RING_R = 9, RING_C = 2 * Math.PI * RING_R;
+function ringSVG(pct, kind) {
+  const p = Math.max(0, Math.min(100, pct)), off = RING_C - (p / 100) * RING_C;
+  return '<svg class="ring' + (kind ? ' ' + kind : '') + '" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle class="rtrack" cx="12" cy="12" r="' + RING_R + '"/><circle class="rval" cx="12" cy="12" r="' + RING_R + '" stroke-dasharray="' + RING_C.toFixed(2) + '" stroke-dashoffset="' + off.toFixed(2) + '"/></svg>';
+}
+function itemIndicator(sh) {
+  const s = stats(sh);
+  if (sh.kind === 'list') {
+    const n = s.n;
+    return { html: '<span class="cbadge' + (n ? ' has' : '') + '">' + n + '</span>', sub: n ? (n + ' ' + sh.unit[n === 1 ? 0 : 1]) : 'Sin cargar', cls: n ? 'ok' : '' };
+  }
+  const pct = s.pct;
+  const g = S.guardadas && S.guardadas[sh.id];
+  if (g) {
+    if (g.firma === firmaDe(sh)) return { html: ringSVG(100, 'done'), sub: 'Guardada ' + fmtHora(g.fecha), cls: 'ok' };
+    return { html: ringSVG(100, 'chg'), sub: 'Con cambios', cls: 'warn' };
+  }
+  if (!s.n) return { html: ringSVG(0, 'empty'), sub: 'Sin datos', cls: '' };
+  return { html: ringSVG(pct, ''), sub: s.n + '/' + s.total + ' campos', cls: '' };
+}
+function assetRow(sh) {
+  const ind = itemIndicator(sh);
+  const ic = h('span', { class: 'aic' }); ic.innerHTML = ind.html;
+  return h('button', { class: 'aitem', type: 'button', onclick: () => menuGo({ name: 'sheet', id: sh.id }) },
+    ic, h('span', { class: 'atxt' }, h('span', { class: 'anm' }, sh.title), h('span', { class: 'asub' + (ind.cls ? ' ' + ind.cls : '') }, ind.sub)));
+}
+function groupBlock(g) {
+  const items = SHEETS.filter(s => s.grp === g);
+  const chip = h('span', { class: 'aic-chip' }); chip.innerHTML = ICONS[GROUP_ICON[g] || 'bolt'];
+  const head = h('div', { class: 'agrp-h' }, chip, h('span', { class: 'agnm' }, g), h('span', { class: 'agct' }, items.length + (items.length === 1 ? ' equipo' : ' equipos')));
+  return h('div', { class: 'agrp' }, head, h('div', { class: 'agrp-list' }, items.map(assetRow)));
+}
+function quickBtn(iconKey, label, onclick) {
+  const ic = h('span', { class: 'qic' }); ic.innerHTML = ICONS[iconKey];
+  return h('button', { type: 'button', onclick }, ic, h('span', { class: 'qtx' }, label));
+}
+function buildDrawer() {
+  const mark = h('span', { class: 'brandmark' }); mark.innerHTML = BRANDMARK;
+  const closeBtn = h('button', { class: 'nd-close', type: 'button', 'aria-label': 'Cerrar menú', onclick: closeMenu }); closeBtn.innerHTML = ICONS.close;
+  const head = h('div', { class: 'nd-head' },
+    h('div', { class: 'row1' }, mark, h('div', { class: 'word' }, h('span', { class: 't1' }, 'Datos KTI'), h('span', { class: 't2' }, 'Navegador de equipos')), closeBtn));
+  const opSet = S.operador && S.operador.trim();
+  const opLabel = opSet ? h('span', null, 'Turno actual: ', h('b', null, S.operador.trim())) : h('span', null, 'Configurar datos del turno');
+  head.append(h('button', { class: 'nd-op', type: 'button', onclick: () => menuGo({ name: 'turno' }) },
+    opLabel, h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
+  const quick = h('div', { class: 'nd-quick' },
+    quickBtn('plus', 'Nuevo informe', () => { closeMenu(); nuevo(); }),
+    quickBtn('clock', 'Historial', () => menuGo({ name: 'hist' })));
+  const body = h('div', { class: 'nd-body' }, GROUP_ORDER.map(groupBlock));
+  const foot = h('div', { class: 'nd-foot' }, 'Datos KTI · Sistema interno de mantenimiento');
+  $('#navdrawer').replaceChildren(head, quick, body, foot);
+}
+function syncMenuUI() {
+  document.body.classList.toggle('menu-open', menuOpen);
+  const sc = $('#navscrim'), dr = $('#navdrawer');
+  if (sc) sc.classList.toggle('show', menuOpen);
+  if (dr) dr.classList.toggle('show', menuOpen);
+  if (menuOpen) buildDrawer();
+}
+function menuIcon(open) {
+  const b = h('button', { class: 'menubtn' + (open ? ' on' : ''), type: 'button', 'aria-label': open ? 'Cerrar menú' : 'Abrir menú', 'aria-expanded': String(open), onclick: toggleMenu });
+  b.innerHTML = open ? ICONS.close : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+  return b;
+}
+function toggleMenu() { menuOpen = !menuOpen; renderTop(); }
+function closeMenu() { if (menuOpen) { menuOpen = false; renderTop(); } }
+function menuGo(v, mode) { go(v, mode); }
+function renderTop() {
+  const w = h('div', { class: 'wrap' });
+  if (view.name === 'home') {
+    w.append(h('span', { class: 'brandtab' }, 'Datos KTI'), menuIcon(menuOpen));
+  } else {
+    const sh = view.name === 'sheet' ? BY[view.id] : null;
+    const title = sh ? sh.title : view.name === 'turno' ? 'Datos del turno' : 'Historial';
+    const bk = h('button', { class: 'back', type: 'button', 'aria-label': 'Volver', onclick: back });
+    bk.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+    w.append(bk, h('h1', null, title));
+    if (sh && sh.kind === 'form') w.append(h('span', { class: 'prog', id: 'prog', 'aria-label': 'Campos completos' }, progText(sh)));
+    w.append(menuIcon(menuOpen));
+  }
+  $('#topbar').replaceChildren(w);
+  syncMenuUI();
+}
+function renderBottom() {
+  const el = $('#bottombar'), home = view.name === 'home';
+  el.hidden = !home;
+  document.body.classList.toggle('has-bb', home);
+  if (!home) { el.replaceChildren(); return; }
+  el.replaceChildren(h('div', { class: 'wrap bb' },
+    h('button', { class: 'btn', type: 'button', onclick: nuevo }, 'Nuevo informe'),
+    h('button', { class: 'btn primary grow', type: 'button', onclick: generar }, 'Generar informe PDF')));
+}
+
+/* ---------- Inicio ---------- */
+function fld(label, ctrl) {
+  const lab = ctrl.matches('input, select, textarea, .in');
+  const w = h(lab ? 'label' : 'div', { class: 'fld' }, h('span', { class: 'fl' }, label), ctrl);
+  if (!lab) { w.setAttribute('role', 'group'); w.setAttribute('aria-label', label); }
+  return w;
+}
+function homeView() {
+  const hero = h('div', { class: 'hero', role: 'img', 'aria-label': 'Planta de gas' });
+  hero.innerHTML = PLANT_ART;
+  return [hero];
+}
+function turnoView() {
+  const set = (k, v) => { S[k] = v; touch(); };
+  const op = h('input', { class: 'txt', id: 'f-op', type: 'text', value: S.operador, autocomplete: 'off', autocapitalize: 'words', enterkeyhint: 'next', oninput: e => { e.target.classList.remove('err'); set('operador', e.target.value); } });
+  const lg = h('input', { class: 'txt', id: 'f-leg', type: 'text', value: S.legajo, autocomplete: 'off', enterkeyhint: 'done', oninput: e => { e.target.classList.remove('err'); set('legajo', e.target.value); } });
+  const fe = h('input', { class: 'txt', id: 'f-fecha', type: 'datetime-local', value: S.fecha, oninput: e => set('fecha', e.target.value) });
+  const head = h('section', { class: 'card' },
+    h('div', { class: 'card-h' }, h('h2', null, 'Informe de turno'), h('span', { class: 'status', id: 'status' }, statusText)),
+    fld('Operador (nombre y apellido)', op),
+    fld('Legajo', lg),
+    h('div', { class: 'fld', role: 'group', 'aria-label': 'Fecha y hora' }, h('span', { class: 'fl' }, 'Fecha y hora'),
+      h('div', { class: 'dt' }, fe, h('button', { class: 'btn small', type: 'button', onclick: () => { fe.value = nowLocal(); set('fecha', fe.value); } }, 'Ahora'))));
+  return [head, h('p', { class: 'hint' }, 'Estos datos identifican el informe cuando generás el PDF.')];
+}
+
+/* ---------- Planillas de datos ---------- */
+function focusNext(el) {
+  const all = [...document.querySelectorAll('#main .in input, #main textarea, #main select')];
+  const i = all.indexOf(el);
+  if (i >= 0 && all[i + 1]) { all[i + 1].focus(); all[i + 1].scrollIntoView({ block: 'center' }); } else el.blur();
+}
+function numCtl(o) {
+  const box = h('div', { class: 'in' });
+  const inp = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', autocorrect: 'off', enterkeyhint: 'next', value: o.value || '', placeholder: o.ph || '', 'aria-label': o.label });
+  const check = () => { const n = toNum(inp.value); box.classList.toggle('over', o.max != null && n != null && n > o.max); };
+  inp.addEventListener('input', () => { const c = cleanNum(inp.value); if (c !== inp.value) inp.value = c; o.onChange(c); check(); });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); focusNext(inp); } });
+  box.append(inp);
+  if (o.neg) box.append(h('button', {
+    type: 'button', class: 'pm', tabindex: '-1', 'aria-label': 'Cambiar signo',
+    onmousedown: e => e.preventDefault(),
+    onclick: () => { const v = inp.value; inp.value = v.charAt(0) === '-' ? v.slice(1) : '-' + v; inp.dispatchEvent(new Event('input')); inp.focus(); },
+  }, '±'));
+  if (o.unit) box.append(h('span', { class: 'u' }, o.unit));
+  check();
+  return box;
+}
+function segEl(id, f) {
+  const wrap = h('div', { class: 'seg', role: 'group', 'aria-label': f.l });
+  const paint = () => [...wrap.children].forEach(b => { const on = val(id, f.k) === b.getAttribute('data-o'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  f.o.forEach(o => wrap.append(h('button', { type: 'button', class: 'segb o-' + slug(o), 'data-o': o, onclick: () => { setVal(id, f.k, val(id, f.k) === o ? '' : o); paint(); } }, o)));
+  paint();
+  return wrap;
+}
+function togEl(id, f) {
+  const b = h('button', { type: 'button', class: 'tog', role: 'switch', 'aria-label': f.l }, h('i'));
+  const paint = () => { const on = !!val(id, f.k); b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); };
+  b.addEventListener('click', () => { setVal(id, f.k, val(id, f.k) ? '' : '1'); paint(); });
+  paint();
+  return b;
+}
+const numOf = (sh, f) => numCtl({ value: val(sh.id, f.k), unit: f.u, neg: f.neg, max: f.max, ph: lastOf(sh.id, f.k), label: f.l, onChange: v => setVal(sh.id, f.k, v) });
+function visorEl(sh, f) {
+  const res = h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--rule);font-size:15px;line-height:1.35' });
+  const lit = numOf(sh, { k: f.k, u: 'L', neg: false, l: f.l + ': carga de aceite en litros' });
+  const inp = lit.querySelector('input');
+  const paint = () => {
+    const c = compCalc(val(sh.id, f.vk));
+    res.textContent = '';
+    if (!c) { res.append(h('span', { style: 'color:var(--ink2)' }, 'Ingresá el % del visor para calcular.')); return; }
+    res.append(
+      h('div', null, 'Tiene: ', h('b', null, fmt1(c.hNow) + ' cm · ' + fmt1(c.vNow) + ' L')),
+      h('div', null, 'Falta para el 100 %: ', h('b', { style: 'color:var(--warn)' }, fmt1(c.hFalta) + ' cm · ' + fmt1(c.vFalta) + ' L')));
+    if (c.vFalta > 0.05) res.append(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', onclick: () => { inp.value = fmt1(c.vFalta); inp.dispatchEvent(new Event('input')); } }, 'Usar ' + fmt1(c.vFalta) + ' L como carga'));
+  };
+  const vin = numCtl({ value: val(sh.id, f.vk), unit: '%', max: 100, label: f.l + ': nivel del visor en %', onChange: v => { setVal(sh.id, f.vk, v); paint(); } });
+  vin.classList.add('wide'); lit.classList.add('wide');
+  const box = (t, c) => h('label', { style: 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px' }, h('span', { style: 'font-size:13px;color:var(--ink2)' }, t), c);
+  paint();
+  return h('div', { class: 'row col' }, h('span', { class: 'lab', style: 'font-weight:600' }, f.l),
+    h('div', { style: 'display:flex;gap:10px' }, box('Nivel del visor', vin), box('Carga realizada', lit)), res);
+}
+function cisternaEl(sh, f) {
+  const res = h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--rule);font-size:15px;line-height:1.4' });
+  const sumaEquipos = () => {
+    const v = S.v[sh.id] || {};
+    let t = 0, hay = false;
+    for (const g of sh.groups) for (const x of g.f) if (x.t === 'v') { const n = toNum(v[x.k]); if (n !== null) { t += n; hay = true; } }
+    return hay ? t : null;
+  };
+  const paint = () => {
+    const v = S.v[sh.id] || {};
+    const c = cistCalc(v[f.k], v[f.k2]);
+    res.textContent = '';
+    if (c.vi === null && c.vf === null) { res.append(h('span', { style: 'color:var(--ink2)' }, 'Ingresá la medida en cm para ver los litros.')); return; }
+    const L = [];
+    if (c.vi !== null) L.push(h('div', null, 'Al iniciar: ', h('b', null, fmtL(c.vi) + ' L')));
+    if (c.vf !== null) L.push(h('div', null, 'Al finalizar: ', h('b', null, fmtL(c.vf) + ' L')));
+    if (c.invertida) L.push(h('div', { style: 'color:var(--warn);font-weight:600' }, 'La medida final es mayor que la inicial: revisá los valores.'));
+    else if (c.cargado !== null) {
+      L.push(h('div', null, 'Se cargó a las máquinas: ', h('b', { style: 'color:var(--warn)' }, fmtL(c.cargado) + ' L')));
+      const se = sumaEquipos();
+      if (se !== null) L.push(h('div', { style: 'font-size:13px;color:var(--ink2)' }, 'Suma de lo cargado en los equipos: ' + fmtL(se) + ' L'));
+    }
+    if (c.stock !== null) L.push(h('div', null, 'Stock en cisterna: ', h('b', null, fmtL(c.stock) + ' L'), h('span', { style: 'color:var(--ink2)' }, ' (' + fmt1(c.pct) + ' % de ' + fmtL(CIST.VTOT) + ' L)')));
+    res.append(...L);
+  };
+  const mk = (key, t) => {
+    const c = numCtl({ value: val(sh.id, key), unit: 'cm', max: CIST.D, label: 'Cisterna: ' + t.toLowerCase() + ' en cm', onChange: v => { setVal(sh.id, key, v); paint(); } });
+    c.classList.add('wide');
+    return h('label', { style: 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px' }, h('span', { style: 'font-size:13px;color:var(--ink2)' }, t), c);
+  };
+  const onIn = () => { if (!res.isConnected) document.removeEventListener('input', onIn, true); else paint(); };
+  document.addEventListener('input', onIn, true);
+  paint();
+  return h('div', { class: 'row col' }, h('span', { class: 'lab', style: 'font-weight:600' }, 'Medida de la cisterna (antes y después de cargar)'),
+    h('div', { style: 'display:flex;gap:10px' }, mk(f.k, 'Medida inicial'), mk(f.k2, 'Medida final')), res);
+}
+function rowEl(sh, f) {
+  if (f.t === 'c') return cisternaEl(sh, f);
+  if (f.t === 'v') return visorEl(sh, f);
+  if (f.t === 'n') return h('label', { class: 'row' }, h('span', { class: 'lab' }, f.l), numOf(sh, f));
+  if (f.t === 's' && f.pk) {
+    const p = pctOf(f);
+    return h('div', { class: 'row col' }, h('span', { class: 'lab' }, f.l),
+      h('div', { style: 'display:flex;align-items:center;gap:10px' }, segEl(sh.id, f),
+        h('label', { style: 'display:flex;flex:1;min-width:0;justify-content:flex-end' }, numOf(sh, p))));
+  }
+  if (f.t === 's') return h('div', { class: 'row' }, h('span', { class: 'lab' }, f.l), segEl(sh.id, f));
+  if (f.t === 'b') return h('div', { class: 'row' }, h('span', { class: 'lab' }, f.l), togEl(sh.id, f));
+  return h('label', { class: 'row col' }, h('span', { class: 'lab' }, f.l),
+    h('textarea', { class: 'txt', rows: 2, value: val(sh.id, f.k), oninput: e => setVal(sh.id, f.k, e.target.value) }));
+}
+function groupEl(sh, g) {
+  const body = g.cols
+    ? h('div', { class: 'cells', style: '--c:' + g.cols }, g.f.map(f => h('label', { class: 'cell' }, h('span', null, f.l), numOf(sh, f))))
+    : h('div', { class: 'rows' }, g.f.map(f => rowEl(sh, f)));
+  return h('section', { class: 'grp' }, g.t ? h('h3', null, g.t) : null, body);
+}
+function formView(sh) {
+  const out = [];
+  if (LAST[sh.id]) out.push(h('p', { class: 'hint', style: 'margin:0 2px 12px' }, 'Los números en gris son la lectura anterior (' + fmtFecha(LASTDATE[sh.id]) + ').'));
+  sh.groups.forEach(g => out.push(groupEl(sh, g)));
+  if (sh.photos) out.push(h('section', { class: 'grp' }, h('h3', null, 'Fotografías (máximo ' + sh.photos.max + ')'), photoEl(S[sh.photos.key], sh.photos.max)));
+  out.push(navEl(sh));
+  return [h('div', { class: 'f-' + sh.fluid }, out)];
+}
+function navEl(sh) {
+  const nx = SHEETS[SHEETS.indexOf(sh) + 1];
+  const out = [saveEl(sh), h('div', { class: 'navrow' },
+    h('button', { class: 'btn', type: 'button', onclick: back }, 'Volver al índice'),
+    nx ? h('button', { class: 'btn primary', type: 'button', onclick: () => go({ name: 'sheet', id: nx.id }, 'replace') }, 'Siguiente: ' + nx.title) : null)];
+  if (sh.kind === 'form') out.push(h('button', { class: 'link danger', type: 'button', onclick: () => clearSheet(sh) }, 'Borrar los datos de esta planilla'));
+  return out;
+}
+async function clearSheet(sh, quick) {
+  if (!quick) {
+    const r = await ask('¿Borrar esta planilla?', 'Se borran todos los datos cargados en ' + sh.title + '.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Borrar', kind: 'danger' }]);
+    if (r !== 'si') return;
+  }
+  if (sh.kind === 'list') S[sh.id] = []; else delete S.v[sh.id];
+  if (sh.photos) S[sh.photos.key] = [];
+  if (S.guardadas) delete S.guardadas[sh.id];
+  touch(); render(true);
+}
+
+/* ---------- Reportes con lista (equipos y carga de aceite) ---------- */
+function selectEl(cur, onChange) {
+  const s = h('select', { class: 'txt' }, h('option', { value: '' }, 'Seleccione un tipo de equipo'), TIPOS.map(o => h('option', { value: o }, o)));
+  s.value = cur || '';
+  s.addEventListener('change', () => onChange(s.value));
+  return s;
+}
+function choiceEl(items, cur, onPick, cls, label, inner) {
+  const wrap = h('div', { class: cls, role: 'radiogroup', 'aria-label': label });
+  const paint = () => [...wrap.children].forEach((b, i) => { const on = items[i].v === cur; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+  items.forEach(it => wrap.append(h('button', {
+    type: 'button', role: 'radio', class: cls === 'prio' ? 'pr' : 'es', style: '--c:' + it.c,
+    onclick: () => { cur = cur === it.v ? '' : it.v; onPick(cur); paint(); },
+  }, h('span', { class: 'dot' }), inner(it))));
+  paint();
+  return wrap;
+}
+function entryEl(sh, e, i) {
+  const carga = sh.id === 'cargas';
+  const set = (k, v) => { e[k] = v; touch(); };
+  const el = h('article', { class: 'entry', id: 'e-' + e.id });
+  el.append(h('div', { class: 'ehead' }, h('h3', null, (carga ? 'Carga de aceite ' : 'Reporte ') + (i + 1)),
+    h('button', { class: 'link danger', type: 'button', onclick: () => delEntry(sh, e) }, 'Eliminar')));
+  if (!carga) el.append(fld('Tipo de equipo', selectEl(e.tipo, v => set('tipo', v))));
+  el.append(fld('Número de TAG', h('input', { class: 'txt', type: 'text', value: e.tag, autocapitalize: 'characters', autocomplete: 'off', oninput: ev => {
+    const t = ev.target, a = t.selectionStart, b = t.selectionEnd;
+    t.value = t.value.toUpperCase();
+    try { t.setSelectionRange(a, b); } catch (x) { /* sin selección */ }
+    set('tag', t.value);
+  } })));
+  el.append(fld('Prioridad', choiceEl(PRIO, e.prioridad, v => set('prioridad', v), 'prio', 'Prioridad', p => h('span', null, h('b', null, p.v), h('small', null, 'Ventana de ejecución: ' + p.w)))));
+  el.append(fld('Ubicación', h('input', { class: 'txt', type: 'text', value: e.ubicacion, autocomplete: 'off', oninput: ev => set('ubicacion', ev.target.value) })));
+  el.append(fld('Estado del equipo', choiceEl(ESTADOS, e.estado, v => set('estado', v), 'est', 'Estado del equipo', s => s.v)));
+  if (carga) {
+    const c = numCtl({ value: e.litros, unit: 'L', label: 'Carga de aceite en litros', onChange: v => set('litros', v) });
+    c.classList.add('wide');
+    el.append(fld('Carga de aceite (litros)', c));
+  }
+  el.append(fld('Observaciones', h('textarea', { class: 'txt', rows: 3, value: e.obs, oninput: ev => set('obs', ev.target.value) })));
+  el.append(fld('Fotografías (máximo 3)', photoEl(e.fotos, 3)));
+  return el;
+}
+function listView(sh) {
+  const arr = S[sh.id], carga = sh.id === 'cargas';
+  if (!arr.length) arr.push(newEntry());
+  const out = [h('p', { class: 'hint', style: 'margin:0 2px 12px' }, carga ? 'Un registro por cada carga de aceite.' : 'Un reporte por equipo. Agregá todos los que necesites.')];
+  arr.forEach((e, i) => out.push(entryEl(sh, e, i)));
+  out.push(h('button', {
+    class: 'btn wide', type: 'button',
+    onclick: () => { const e = newEntry(); arr.push(e); touch(); render(true); const el = $('#e-' + e.id); if (el) el.scrollIntoView({ block: 'start' }); },
+  }, carga ? '+ Agregar otra carga' : '+ Agregar otro reporte'));
+  out.push(navEl(sh));
+  return [h('div', { class: 'f-' + sh.fluid }, out)];
+}
+async function delEntry(sh, e) {
+  if (entryHasData(e)) {
+    const r = await ask('¿Eliminar este registro?', 'Se borran también sus fotos.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Eliminar', kind: 'danger' }]);
+    if (r !== 'si') return;
+  }
+  S[sh.id] = S[sh.id].filter(x => x !== e);
+  touch(); render(true);
+}
+
+/* ---------- Fotos ---------- */
+async function shrink(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) {
+    bmp = await new Promise((res, rej) => {
+      const u = URL.createObjectURL(file), im = new Image();
+      im.onload = () => { URL.revokeObjectURL(u); res(im); };
+      im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('imagen')); };
+      im.src = u;
+    });
+  }
+  const sw = bmp.width || bmp.naturalWidth, sy = bmp.height || bmp.naturalHeight;
+  const k = Math.min(1, 1280 / Math.max(sw, sy));
+  const w = Math.max(1, Math.round(sw * k)), hh = Math.max(1, Math.round(sy * k));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = hh;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, hh); g.drawImage(bmp, 0, 0, w, hh);
+  if (bmp.close) bmp.close();
+  return { d: c.toDataURL('image/jpeg', 0.72), w, h: hh };
+}
+function photoEl(arr, max) {
+  const wrap = h('div');
+  if (arr.length) wrap.append(h('div', { class: 'thumbs' }, arr.map((p, i) => h('figure', { class: 'th' },
+    h('img', { src: p.d, alt: 'Foto ' + (i + 1) }),
+    h('button', { class: 'x', type: 'button', 'aria-label': 'Quitar foto ' + (i + 1), onclick: () => { arr.splice(i, 1); touch(); render(true); } }, '×')))));
+  const full = arr.length >= max;
+  const add = async ev => {
+    const files = [...ev.target.files];
+    ev.target.value = '';
+    if (!files.length) return;
+    busy(true, 'Procesando foto…');
+    try { for (const f of files) { if (arr.length >= max) break; arr.push(await shrink(f)); } }
+    catch (e) { toast('No se pudo leer la foto.'); }
+    busy(false); touch(); render(true);
+  };
+  const cam = h('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true, onchange: add });
+  const gal = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: add });
+  wrap.append(cam, gal, h('div', { class: 'pbtns' },
+    h('button', { class: 'btn small', type: 'button', disabled: full, onclick: () => cam.click() }, 'Tomar foto'),
+    h('button', { class: 'btn small', type: 'button', disabled: full, onclick: () => gal.click() }, 'Elegir de galería'),
+    h('span', { class: 'pcount' }, arr.length + ' de ' + max)));
+  return wrap;
+}
+
+/* ---------- Informe: PDF, historial y nuevo informe ---------- */
+const dlP = (window.claude && window.claude.use) ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+async function saveFile(blob, name) {
+  try {
+    const dl = await dlP;
+    if (dl) { await dl.save({ filename: name, data: blob }); return 'saved'; }
+  } catch (e) {
+    const c = e && e.code;
+    if (c === 'declined') return 'declined';
+    if (c === 'rate_limited') { toast('Esperá un momento y probá de nuevo.'); return 'declined'; }
+    if (c === 'extension_not_enabled' || c === 'rejected_extension') { toast('Este visor no permite guardar archivos ' + name.split('.').pop().toUpperCase() + '.'); return 'declined'; }
+    if (c === 'too_large') { toast('El archivo es demasiado grande para guardarlo acá.'); return 'declined'; }
+  }
+  try {
+    const file = new File([blob], name, { type: blob.type || 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return 'saved'; }
+  } catch (e) { if (e && e.name === 'AbortError') return 'declined'; }
+  try {
+    const url = URL.createObjectURL(blob), a = h('a', { href: url, download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return 'saved';
+  } catch (e) { return 'error'; }
+}
+const safe = s => String(s).replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').trim();
+const stamp = st => (st.fecha || '').replace(/[-:]/g, '').replace('T', '_').slice(0, 13);
+const who = st => (st.operador || 'operador').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const fileName = st => 'Informe-KTI_' + stamp(st) + '_' + who(st) + '.pdf';
+const apartados = st => SHEETS.filter(sh => sheetHasData(st, sh));
+
+// fmt 'uno': un solo PDF con cada apartado en hoja nueva. fmt 'zip': un PDF por apartado, cada uno en su carpeta.
+async function entregar(st, fmt) {
+  busy(true, fmt === 'zip' ? 'Armando los PDF…' : 'Armando el PDF…');
+  let blob = null, name = '';
+  try {
+    if (fmt === 'zip') {
+      const root = 'Informe-KTI_' + stamp(st) + '_' + who(st);
+      const files = [{ name: root + '/', data: null }];
+      for (const sh of apartados(st)) {
+        const pdf = await buildPdf(st, { sheets: [sh] });
+        const dir = root + '/' + safe(sh.title) + '/';
+        files.push({ name: dir, data: null }, { name: dir + safe(sh.title) + '_' + stamp(st) + '_' + who(st) + '.pdf', data: new Uint8Array(await pdf.arrayBuffer()) });
+      }
+      blob = makeZip(files); name = root + '.zip';
+    } else { blob = await buildPdf(st); name = fileName(st); }
+  } catch (e) { console.error(e); }
+  busy(false);
+  return blob ? saveFile(blob, name) : 'error';
+}
+async function askFormato() {
+  const last = PREFS.formato === 'zip' ? 'zip' : 'uno';
+  const r = await ask('Generar informe', '¿Cómo querés armarlo?', [
+    { id: 'uno', label: 'Un solo PDF', sub: 'Cada apartado arranca en una hoja nueva.', kind: 'opt' + (last === 'uno' ? ' primary' : '') },
+    { id: 'zip', label: 'Un PDF por apartado', sub: 'Baja un .zip con una carpeta por cada apartado, listo para archivar.', kind: 'opt' + (last === 'zip' ? ' primary' : '') },
+    { id: 'no', label: 'Cancelar' },
+  ], { stack: true });
+  if (r !== 'uno' && r !== 'zip') return null;
+  PREFS.formato = r;
+  DB.put('kv', PREFS, 'prefs');
+  return r;
+}
+function flashMissing() {
+  if (view.name !== 'turno') go({ name: 'turno' });
+  const op = $('#f-op'), lg = $('#f-leg');
+  let first = null;
+  if (!S.operador.trim()) { op.classList.add('err'); first = op; }
+  if (!S.legajo.trim()) { lg.classList.add('err'); first = first || lg; }
+  if (first) { first.scrollIntoView({ block: 'center' }); first.focus(); }
+  toast('Completá operador y legajo para generar el informe.');
+}
+async function guardarHist() {
+  const rec = { id: S.id, ts: Date.now(), fecha: S.fecha, operador: S.operador, legajo: S.legajo, resumen: summarize(S), v: clone(S.v) };
+  await DB.put('informes', rec);
+  await DB.put('full', clone(S), S.id);
+  HIST = HIST.filter(x => x.id !== rec.id);
+  HIST.unshift(rec);
+  HIST.sort((a, b) => b.ts - a.ts);
+  while (HIST.length > MAXH) { const old = HIST.pop(); await DB.del('informes', old.id); await DB.del('full', old.id); }
+  computeLast();
+}
+function nuevoVacio() {
+  S = newState({ operador: S.operador, legajo: S.legajo });
+  save();
+  go({ name: 'home' }, 'replace');
+  toast('Informe nuevo listo.');
+}
+async function nuevo() {
+  if (hasAnyData(S)) {
+    const r = await ask('¿Empezar un informe nuevo?', 'Se borra lo cargado en el informe actual. Si todavía no generaste el PDF, se pierde.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Borrar y empezar', kind: 'danger' }]);
+    if (r !== 'si') return;
+  }
+  nuevoVacio();
+}
+async function generar() {
+  if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
+  if (!hasAnyData(S)) return toast('Todavía no cargaste datos.');
+  const fmt = await askFormato();
+  if (!fmt) return;
+  const res = await entregar(S, fmt);
+  if (res === 'error') return toast('No se pudo armar el archivo. Probá de nuevo.');
+  if (res === 'declined') return toast('No se guardó el archivo. Tus datos siguen en el borrador.');
+  await guardarHist();
+  const n = apartados(S).length;
+  const que = fmt === 'zip' ? 'Guardé un .zip con ' + n + (n === 1 ? ' carpeta (un apartado).' : ' carpetas, una por apartado.') : 'Guardé el PDF.';
+  const r = await ask('Informe generado', que + ' También quedó en el historial de este dispositivo. ¿Querés empezar un informe nuevo?', [{ id: 'no', label: 'Seguir con este' }, { id: 'si', label: 'Informe nuevo', kind: 'primary' }]);
+  if (r === 'si') nuevoVacio();
+}
+
+/* ---------- Guardar cada planilla en su carpeta de Google Drive (DATOS / apartado) ---------- */
+const DRIVE = 'Google Drive', FOLDER_MIME = 'application/vnd.google-apps.folder';
+const MCPP = (window.claude && window.claude.use ? window.claude.use('mcp').catch(() => null) : Promise.resolve(null)).then(async m => {
+  MCP = m || null;
+  MCP_ST = m ? 'ok' : 'no';
+  if (m) { try { const l = await m.listTools(); FILEARGS = !!(l && l.fileArgs); } catch (e) { FILEARGS = false; } }
+  paintDest();
+});
+const fmtHora = f => { const m = /T(\d\d:\d\d)/.exec(f || ''); return m ? m[1] : ''; };
+const qs = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+const stampOf = d => ({ fecha: d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()), seg: pad2(d.getSeconds()) });
+
+// Huella de lo cargado en un apartado: permite saber si hubo cambios después de guardarlo
+function firmaDe(sh) {
+  let s;
+  if (sh.kind === 'list') s = JSON.stringify((S[sh.id] || []).filter(entryHasData).map(e => Object.assign({}, e, { fotos: (e.fotos || []).map(f => f.d.length) })));
+  else s = JSON.stringify(S.v[sh.id] || {}) + (sh.photos ? '|' + (S[sh.photos.key] || []).map(f => f.d.length).join(',') : '');
+  let x = 2166136261;
+  for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); }
+  return (x >>> 0).toString(36) + ':' + s.length;
+}
+function destNodes(sh) {
+  const ruta = DRIVE_ROOT + ' / ' + sh.carpeta, g = S.guardadas && S.guardadas[sh.id];
+  if (g) {
+    const igual = g.firma === firmaDe(sh);
+    const out = ['Guardada ' + fmtHora(g.fecha) + (g.donde === 'drive' ? ' en ' + ruta + '.' : ' como PDF en el celular.')];
+    if (igual) out.push(' ', h('button', { class: 'link', type: 'button', onclick: () => clearSheet(sh, true) }, 'Dejar en blanco para la próxima lectura'));
+    else out.push(' Tenés cambios sin guardar.');
+    return out;
+  }
+  if (MCP_ST === 'no') return ['Al guardar se abre el menú de compartir: elegí Drive (carpeta ' + ruta + ') o guardalo en el celular.'];
+  return ['Se guarda en Drive, en ' + ruta + ', con la fecha y la hora como nombre.'];
+}
+function paintDest() {
+  const el = $('#dest');
+  if (!el || !S || view.name !== 'sheet' || !BY[view.id]) return;
+  el.replaceChildren(...destNodes(BY[view.id]));
+}
+function saveEl(sh) {
+  return h('div', { class: 'savebox' },
+    h('button', { class: 'btn primary wide', type: 'button', onclick: () => guardarPlanilla(sh) }, 'Guardar planilla'),
+    h('p', { class: 'dest', id: 'dest' }, destNodes(sh)));
+}
+
+async function driveFind(title, parent) {
+  const r = await MCP.callTool(DRIVE, 'search_files', { query: "title = '" + qs(title) + "' and mimeType = '" + FOLDER_MIME + "' and parentId = '" + parent + "'", pageSize: 5, excludeContentSnippets: true });
+  const p = r && r.payload;
+  return p && Array.isArray(p.files) && p.files.length ? p.files[0].id : null;
+}
+async function driveMake(title, parent) {
+  const input = { title, contentMimeType: FOLDER_MIME };
+  if (parent !== 'root') input.parentId = parent;
+  const r = await MCP.callTool(DRIVE, 'create_file', input);
+  const id = r && r.payload && r.payload.id;
+  if (!id) throw Object.assign(new Error('Drive no devolvió el id de la carpeta'), { code: 'bad_shape' });
+  return id;
+}
+let driveMutex = Promise.resolve();
+// Devuelve el id de DATOS / <nombre>; si no existe la crea. Las carpetas ya resueltas se recuerdan en el celular.
+function driveFolder(name) {
+  const run = async () => {
+    if (!DRIVEIDS.root) { DRIVEIDS.root = (await driveFind(DRIVE_ROOT, 'root')) || (await driveMake(DRIVE_ROOT, 'root')); DB.put('kv', DRIVEIDS, 'drive'); }
+    if (!DRIVEIDS.f[name]) { DRIVEIDS.f[name] = (await driveFind(name, DRIVEIDS.root)) || (await driveMake(name, DRIVEIDS.root)); DB.put('kv', DRIVEIDS, 'drive'); }
+    return DRIVEIDS.f[name];
+  };
+  const p = driveMutex.then(run);
+  driveMutex = p.catch(() => {});
+  return p;
+}
+const blobToB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+async function driveUpload(sh, blob, title) {
+  const intento = async () => {
+    const parent = await driveFolder(sh.carpeta);
+    let contenido;
+    if (FILEARGS) contenido = { $file: { data: blob, name: 'planilla.pdf', type: 'application/pdf' } };
+    else {
+      contenido = await blobToB64(blob);
+      if (contenido.length > 900000) throw Object.assign(new Error('El PDF pesa ' + (blob.size / 1048576).toFixed(1) + ' MB'), { code: 'too_big' });
+    }
+    const r = await MCP.callTool(DRIVE, 'create_file', { title, parentId: parent, base64Content: contenido, contentMimeType: 'application/pdf', disableConversionToGoogleType: true });
+    const f = r && r.payload;
+    if (!f || !f.id) throw Object.assign(new Error('Drive no devolvió el archivo'), { code: 'bad_shape' });
+    if (f.fileSize !== undefined && Number(f.fileSize) !== blob.size) throw Object.assign(new Error('Drive guardó ' + f.fileSize + ' bytes de ' + blob.size), { code: 'bad_size' });
+    return f.id;
+  };
+  try { return await intento(); }
+  catch (e) {
+    // "tool_error": Drive contestó que no pudo. La carpeta recordada pudo borrarse o moverse: se busca de nuevo, una sola vez
+    if (e && e.code === 'tool_error') { DRIVEIDS = { root: '', f: {} }; return await intento(); }
+    throw e;
+  }
+}
+// Tras un error ambiguo (la escritura pudo haberse hecho) se mira si el archivo ya está antes de ofrecer reintentar
+async function driveConfirm(sh, title) {
+  try {
+    const parent = DRIVEIDS.f[sh.carpeta];
+    if (!parent) return null;
+    const r = await MCP.callTool(DRIVE, 'search_files', { query: "title = '" + qs(title) + "' and parentId = '" + parent + "'", pageSize: 3, excludeContentSnippets: true });
+    const p = r && r.payload;
+    return p && Array.isArray(p.files) && p.files.length ? p.files[0].id : null;
+  } catch (e) { return null; }
+}
+function driveMsg(e) {
+  const c = e && e.code;
+  if (c === 'needs_reauth') return ['Hay que reconectar Google Drive', 'Se venció la conexión. Reconectala en Claude, en Ajustes, Conectores.'];
+  if (c === 'server_not_connected' || c === 'server_not_found') return ['Google Drive no está conectado', 'Conectalo en Claude, en Ajustes, Conectores.'];
+  if (c === 'selection_required') return ['Elegí qué Google Drive usar', 'Tenés más de uno conectado. Claude te pide elegir uno.'];
+  if (c === 'not_in_manifest' || c === 'consent_required' || c === 'not_granted') return ['Falta el permiso para Google Drive', 'Aceptá el permiso cuando la app lo pida y probá de nuevo.'];
+  if (c === 'blocked_by_policy' || c === 'approval_required') return ['Tu organización no permite guardar en Drive desde acá', 'Bajá el PDF al celular.'];
+  if (c === 'too_big') return ['El PDF es muy pesado para subirlo', (e.message || '') + '. Bajalo al celular.'];
+  if (c === 'bad_size') return ['Drive guardó el archivo incompleto', 'Tu planilla sigue cargada. Probá de nuevo; si quedó un archivo roto en la carpeta, borralo.'];
+  if (c === 'tool_error') return ['Google Drive rechazó el guardado', String((e && e.message) || '').slice(0, 160)];
+  return ['No se pudo conectar con Google Drive', 'Puede ser la señal. Tu planilla sigue cargada; probá de nuevo.'];
+}
+const sinReintento = c => c === 'blocked_by_policy' || c === 'approval_required' || c === 'too_big';
+const ambiguo = c => c === 'server_unavailable' || c === 'upstream_error' || c === 'cancelled';
+function driveTitle(sh, ahora, conSeg) {
+  const t = ahora.fecha.split('T');
+  return t[0] + ' ' + t[1].replace(':', '-') + (conSeg ? '-' + ahora.seg : '') + (sh.multi ? ' ' + sh.title : '') + '.pdf';
+}
+
+async function guardarPlanilla(sh) {
+  if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
+  if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
+  const ahora = stampOf(new Date());
+  const prev = S.guardadas && S.guardadas[sh.id];
+  const title = driveTitle(sh, ahora, !!prev && prev.titulo === driveTitle(sh, ahora, false));
+  busy(true, 'Armando el PDF…');
+  let blob = null;
+  try { blob = await buildPdf(S, { sheets: [sh], fecha: ahora.fecha }); } catch (e) { console.error(e); }
+  busy(false);
+  if (!blob) return toast('No se pudo armar el PDF.');
+  if (MCP_ST === 'checking') { busy(true, 'Conectando…'); await MCPP; busy(false); }
+  const firma = firmaDe(sh);
+  const listo = donde => {
+    (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde, firma, titulo: title };
+    if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now() }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
+    touch();
+  };
+  if (MCP) {
+    for (;;) {
+      busy(true, 'Guardando en Drive…');
+      let id = null, err = null;
+      try { id = await driveUpload(sh, blob, title); } catch (e) { err = e; }
+      if (err && ambiguo(err.code)) { id = await driveConfirm(sh, title); if (id) err = null; }
+      busy(false);
+      if (id) { listo('drive'); toast('Guardada en ' + DRIVE_ROOT + ' / ' + sh.carpeta + '.'); return; }
+      console.error(err);
+      const m = driveMsg(err);
+      const b = [{ id: 'no', label: 'Cancelar' }, { id: 'dl', label: 'Bajar el PDF al celular' }];
+      if (!sinReintento(err && err.code)) b.push({ id: 're', label: 'Reintentar', kind: 'primary' });
+      const r = await ask(m[0], m[1], b, { stack: true });
+      if (r === 're') continue;
+      if (r === 'dl') break;
+      return;
+    }
+  }
+  const res = await saveFile(blob, sh.carpeta + ' ' + title);
+  if (res === 'saved') { listo('celular'); toast('Se bajó el PDF de ' + sh.title + '.'); }
+  else if (res === 'declined') toast('No se guardó el archivo.');
+  else toast('No se pudo guardar el archivo.');
+}
+
+/* ---------- Historial ---------- */
+function histView() {
+  if (!HIST.length) return [h('div', { class: 'empty' }, h('h2', null, 'Todavía no hay informes guardados'), h('p', null, 'Cuando generes un PDF, el informe queda guardado acá, en este dispositivo.'))];
+  return HIST.map(r => h('article', { class: 'hcard' },
+    h('div', { class: 'hh' }, h('b', null, fmtFecha(r.fecha)), h('span', null, r.operador + ', legajo ' + r.legajo)),
+    h('p', null, summaryText(r.resumen)),
+    h('div', { class: 'hact' },
+      h('button', { class: 'btn', type: 'button', onclick: () => abrirHist(r) }, 'Abrir'),
+      h('button', { class: 'btn', type: 'button', onclick: () => pdfHist(r) }, 'PDF'),
+      h('button', { class: 'btn', type: 'button', onclick: () => borrarHist(r) }, 'Eliminar'))));
+}
+async function abrirHist(r) {
+  const full = await DB.get('full', r.id);
+  if (!full) return toast('No se encontró el informe completo.');
+  const a = await ask('¿Abrir este informe?', 'Reemplaza el borrador actual por el informe del ' + fmtFecha(r.fecha) + '.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Abrir', kind: 'primary' }]);
+  if (a !== 'si') return;
+  S = normState(clone(full));
+  S.id = uid();
+  await save();
+  go({ name: 'home' }, 'replace');
+  toast('Informe cargado como borrador.');
+}
+async function pdfHist(r) {
+  const full = await DB.get('full', r.id);
+  if (!full) return toast('No se encontró el informe completo.');
+  const fmt = await askFormato();
+  if (!fmt) return;
+  const res = await entregar(normState(full), fmt);
+  if (res === 'error') toast('No se pudo armar el archivo.');
+  else if (res === 'declined') toast('No se guardó el archivo.');
+}
+async function borrarHist(r) {
+  const a = await ask('¿Eliminar este informe?', 'Se borra del historial de este dispositivo.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Eliminar', kind: 'danger' }]);
+  if (a !== 'si') return;
+  await DB.del('informes', r.id);
+  await DB.del('full', r.id);
+  HIST = HIST.filter(x => x.id !== r.id);
+  computeLast();
+  render(true);
+}
+
+/* ---------- Arranque ---------- */
+document.addEventListener('visibilitychange', () => { if (document.hidden && saveT) save(); });
+window.addEventListener('pagehide', () => { if (saveT) save(); });
+(async function boot() {
+  const hs = history.state && history.state.v;
+  if (hs && (hs.name !== 'sheet' || BY[hs.id])) view = hs;
+  let data = null;
+  try {
+    data = await Promise.race([
+      Promise.all([DB.get('kv', 'draft'), DB.get('kv', 'perfil'), DB.all('informes'), DB.get('kv', 'prefs'), DB.get('kv', 'ultimas'), DB.get('kv', 'drive')]),
+      new Promise(res => setTimeout(() => res(null), 3500)),
+    ]);
+  } catch (e) { data = null; }
+  persist = !!data && data[2] !== null;
+  const draft = persist ? data[0] : null, perfil = persist ? data[1] : null;
+  PREFS = (persist && data[3]) || {};
+  ULT = (persist && data[4]) || {};
+  DRIVEIDS = persist && data[5] && data[5].f ? data[5] : { root: '', f: {} };
+  HIST = persist ? data[2].slice().sort((a, b) => b.ts - a.ts) : [];
+  computeLast();
+  S = draft ? normState(draft) : newState(perfil);
+  if (draft && !hasAnyData(S)) S.fecha = nowLocal();
+  setStatus(!persist ? 'Este navegador no permite guardar el borrador' : draft && hasAnyData(S) ? 'Borrador recuperado' : '');
+  render();
+})();
+
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
