@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a1f3d">
+<meta name="theme-color" content="#0B2436">
 <title>Datos KTI</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -17,31 +17,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  color-scheme: light dark;
-  --bg: #e4e9ee; --sheet: #ffffff; --ink: #0f1c2b; --ink2: #4b5b6c; --rule: #d3dae2;
-  --field: #f2f5f8; --fieldb: #b9c5d1; --navy: #0a1f3d; --onnavy: #ffffff;
-  --primary: #0a1f3d; --onprimary: #ffffff; --focus: #2f7de1;
-  --ok: #1b7f45; --bad: #c62828; --warn: #b26a00;
-  --gas: #d9a000; --oil: #8a5a33; --fire: #c62828; --steel: #5b6b7c;
+  /* Colores Fluxus (mismos que la app de Pozos) */
+  color-scheme: dark;
+  --bg: #0B2436; --sheet: #123249; --ink: #E9EEF2; --ink2: #93A9BA; --rule: #1E3E56;
+  --field: #0E2B40; --fieldb: #2B5573; --navy: #0B2436; --onnavy: #E9EEF2;
+  --primary: #1C7293; --onprimary: #ffffff; --focus: #1C7293; --accent2: #6FC9B0; --dim: #163C50;
+  --ok: #6FC9B0; --bad: #ef6b6b; --warn: #e3a13b;
+  --gas: #e6b422; --oil: #c08a5a; --fire: #e05252; --steel: #7C93A6;
   --head: "Barlow Condensed", "Roboto Condensed", "sans-serif-condensed", "Avenir Next Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #08111b; --sheet: #101b29; --ink: #e7eef6; --ink2: #9fb1c4; --rule: #23364b;
-    --field: #0b1521; --fieldb: #2f465f; --navy: #0c2748; --primary: #3b82d6; --onprimary: #ffffff;
-    --ok: #3fbf78; --bad: #ef6b6b; --warn: #e3a13b;
-    --gas: #e6b422; --oil: #b98255; --fire: #e05252; --steel: #8496a9;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #08111b; --sheet: #101b29; --ink: #e7eef6; --ink2: #9fb1c4; --rule: #23364b;
-  --field: #0b1521; --fieldb: #2f465f; --navy: #0c2748; --primary: #3b82d6; --onprimary: #ffffff;
-  --ok: #3fbf78; --bad: #ef6b6b; --warn: #e3a13b;
-  --gas: #e6b422; --oil: #b98255; --fire: #e05252; --steel: #8496a9;
 }
 html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); background: var(--navy); -webkit-text-size-adjust: 100%; }
 *, *::before, *::after { box-sizing: inherit; }
@@ -53,7 +40,7 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .wrap { max-width: 720px; margin: 0 auto; }
 
 /* Barra superior */
-#topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--navy); color: var(--onnavy); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+#topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--navy); color: var(--onnavy); box-shadow: 0 1px 0 var(--rule); }
 #topbar .wrap { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 6px 14px; position: relative; }
 #topbar h1 { flex: 1; min-width: 0; margin: 0; font: 700 21px/1.08 var(--head); letter-spacing: .2px; }
 .brandtab { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 8px; align-self: stretch; margin: 6px 0; padding: 0 16px; background: linear-gradient(180deg, color-mix(in srgb, #fff 16%, transparent), color-mix(in srgb, #fff 3%, transparent)); border: 1px solid rgba(255,255,255,.22); border-bottom: 3px solid var(--focus); border-radius: 10px 10px 4px 4px; font: 700 20px/1.05 var(--head); letter-spacing: .3px; color: #fff; }
@@ -134,7 +121,13 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .hturno .ht2 { font: 600 16.5px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hturno .ht2.falta { color: var(--warn); }
 .hturno .chev { flex: none; font-size: 24px; color: var(--ink2); }
-.acc-grp { margin: 0 0 14px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.xlcard { margin: 0 0 14px; padding: 12px 14px 14px; background: var(--sheet); border: 1px solid var(--rule); border-left: 6px solid var(--accent2); border-radius: 10px; }
+.xlh { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.xlh h2 { margin: 0; font: 700 20px var(--head); }
+.xlmes { width: auto; min-width: 170px; }
+.xlbtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.xlbtns .btn { min-height: 46px; font-size: 15px; }
+.acc-grp { margin: 0 0 14px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; overflow: clip; }
 .acc { border-top: 1px solid var(--rule); scroll-margin-top: 66px; }
 .acc .aitem { border-top: 0; }
 .acc.open > .aitem { background: var(--field); }
@@ -143,6 +136,11 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .acc.open .acc-chev { transform: rotate(180deg); }
 .acc-body { padding: 12px 10px 14px; background: var(--bg); border-top: 1px solid var(--rule); }
 .acc-body .grp { margin-bottom: 12px; }
+.acc-body .savebox { position: sticky; bottom: 0; z-index: 3; margin: 12px -10px -14px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--bg); border-top: 1px solid var(--rule); box-shadow: 0 -6px 14px rgba(0,0,0,.08); }
+.acc-body .savebox .dest { margin-top: 6px; font-size: 13.5px; }
+.acc-body .link.danger { display: block; margin: 4px auto 0; }
+.nd-quick { flex-wrap: wrap; }
+.nd-quick button { flex: 1 1 40%; }
 @media (prefers-reduced-motion: reduce) { .acc-chev { transition: none; } }
 body.has-bb main { padding-bottom: 130px; }
 
@@ -203,7 +201,7 @@ select.txt { appearance: auto; }
 .segb { min-width: 62px; height: 45px; padding: 0 14px; border: 0; border-left: 1.5px solid var(--fieldb); background: var(--field); font-weight: 600; font-size: 16px; }
 .segb:first-child { border-left: 0; }
 .segb.on { background: var(--ink); color: var(--sheet); }
-.segb.on.o-ok, .segb.on.o-si { background: var(--ok); color: #fff; }
+.segb.on.o-ok, .segb.on.o-si { background: var(--ok); color: #0B2436; }
 .segb.on.o-bajo, .segb.on.o-no { background: var(--bad); color: #fff; }
 .segb.on.o-sat { background: var(--warn); color: #fff; }
 .tog { position: relative; flex: none; width: 62px; height: 40px; padding: 0; border: 1.5px solid var(--fieldb); border-radius: 20px; background: var(--field); }
@@ -293,6 +291,32 @@ body.has-bb #toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 .sv.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
 .sv.chg { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, transparent); }
 
+
+/* Efectos de botones (como la app de Pozos) */
+.btn, .aitem, .hturno, .nd-quick button, .segb, .tog, .nd-prin, .menubtn, .back, .link, .nd-op, .nd-close {
+  transition: transform .12s ease, background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.btn:active, .nd-quick button:active, .hturno:active, .nd-prin:active, .segb:active { transform: scale(.95); }
+.btn.wide:active, .acc-body .savebox .btn:active { transform: scale(.98); }
+.aitem:active { transform: scale(.985); }
+.menubtn:active, .back:active, .nd-close:active, .tog:active { transform: scale(.9); }
+.btn.primary { box-shadow: 0 0 0 0 rgba(28,114,147,0); }
+.btn.primary:active, .btn.primary:focus-visible { box-shadow: 0 0 0 4px rgba(28,114,147,.35); }
+.acc.open > .aitem { box-shadow: inset 3px 0 0 var(--accent2), 0 0 0 1px rgba(28,114,147,.25); }
+.segb.on { box-shadow: 0 0 0 3px rgba(28,114,147,.3) inset; }
+.xlbtns .btn:active { border-color: var(--accent2); }
+@media (hover: hover) {
+  .btn:hover, .nd-quick button:hover, .hturno:hover, .nd-prin:hover, .segb:hover { border-color: var(--primary); }
+  .aitem:hover { background: var(--dim); }
+  .hcard:hover, .xlcard:hover { border-color: var(--primary); }
+}
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.acc-body { animation: rise .22s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .btn, .aitem, .hturno, .nd-quick button, .segb, .tog, .nd-prin, .menubtn, .back { transition: none; }
+  .btn:active, .aitem:active, .hturno:active, .nd-quick button:active, .segb:active, .menubtn:active { transform: none; }
+  .acc-body { animation: none; }
+}
 </style>
 </head>
 <body>
@@ -1431,6 +1455,7 @@ function buildDrawer() {
   const quick = h('div', { class: 'nd-quick' },
     quickBtn('plus', 'Nuevo informe', () => { closeMenu(); nuevo(); }),
     quickBtn('clock', 'Historial', () => menuGo({ name: 'hist' })));
+  if (!esMovil()) quick.append(quickBtn('doc', 'Informe PDF', () => { closeMenu(); generar(); }));
   if (PRINCIPAL) {
     const rb = quickBtn('inbox', 'Recibidos', () => menuGo({ name: 'recibidos' }));
     const n = nNuevos();
@@ -1477,7 +1502,7 @@ function renderTop() {
   syncMenuUI();
 }
 function renderBottom() {
-  const el = $('#bottombar'), home = view.name === 'home';
+  const el = $('#bottombar'), home = false; // los botones de informe pasaron al menú
   el.hidden = !home;
   document.body.classList.toggle('has-bb', home);
   if (!home) { el.replaceChildren(); return; }
@@ -1505,7 +1530,7 @@ function homeView() {
     h('span', { class: 'htx' }, h('span', { class: 'ht1' }, opSet ? 'Turno actual' : 'Datos del turno'),
       h('span', { class: 'ht2' + (opSet ? '' : ' falta') }, opSet ? S.operador.trim() + (S.legajo && S.legajo.trim() ? ' · legajo ' + S.legajo.trim() : '') : 'Tocá para cargar operador y legajo')),
     h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
-  return [hero, turno, ...GROUP_ORDER.map(accGroup)];
+  return [hero, turno, esMovil() ? null : excelCard(), ...GROUP_ORDER.map(accGroup)].filter(Boolean);
 }
 function accGroup(g) {
   const items = SHEETS.filter(s => s.grp === g);
@@ -1682,9 +1707,8 @@ function formView(sh) {
 function navEl(sh) {
   const nx = SHEETS[SHEETS.indexOf(sh) + 1];
   const enInicio = view.name === 'home';
-  const out = [saveEl(sh), enInicio ? h('div', { class: 'navrow' },
-    h('button', { class: 'btn', type: 'button', onclick: () => toggleAcc(sh.id) }, 'Cerrar'),
-    nx ? h('button', { class: 'btn primary', type: 'button', onclick: () => toggleAcc(nx.id) }, 'Siguiente: ' + nx.title) : null) : h('div', { class: 'navrow' },
+  if (enInicio) return [sh.kind === 'form' ? h('button', { class: 'link danger', type: 'button', onclick: () => clearSheet(sh) }, 'Borrar los datos de ' + sh.title) : null, saveEl(sh, 'Guardar ' + sh.title)];
+  const out = [saveEl(sh), h('div', { class: 'navrow' },
     h('button', { class: 'btn', type: 'button', onclick: back }, 'Volver al índice'),
     nx ? h('button', { class: 'btn primary', type: 'button', onclick: () => go({ name: 'sheet', id: nx.id }, 'replace') }, 'Siguiente: ' + nx.title) : null)];
   if (sh.kind === 'form') out.push(h('button', { class: 'link danger', type: 'button', onclick: () => clearSheet(sh) }, 'Borrar los datos de esta planilla'));
@@ -1976,9 +2000,9 @@ function paintDest() {
   const el = $('#dest');
   if (el) el.replaceChildren(...destNodes(BY[id]));
 }
-function saveEl(sh) {
+function saveEl(sh, label) {
   return h('div', { class: 'savebox' },
-    h('button', { class: 'btn primary wide', type: 'button', onclick: () => guardarPlanilla(sh) }, 'Guardar planilla'),
+    h('button', { class: 'btn primary wide', type: 'button', onclick: () => guardarPlanilla(sh) }, label || 'Guardar planilla'),
     h('p', { class: 'dest', id: 'dest' }, destNodes(sh)));
 }
 
@@ -2129,6 +2153,7 @@ let PRINCIPAL = lsGet('kti_principal', '') === '1';
 let BAJADOS = new Set();
 try { BAJADOS = new Set(JSON.parse(lsGet('kti_bajados', '[]')) || []); } catch (e) {}
 let RECIB = [], recibErr = '', recibUnsub = null, recibPrimera = true, recibListo = false;
+ICONS.doc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20V3.5z"/><path d="M14 3.5v4h4M9.5 13h5M9.5 16.5h5"/></svg>';
 ICONS.inbox = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5 6.3 6h11.4L20 13.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18v-4.5z"/><path d="M4 13.5h4.5l1.2 2h4.6l1.2-2H20"/></svg>';
 
 // Las fotos van en documentos aparte (Firestore admite hasta 1 MB por documento)
@@ -2294,6 +2319,479 @@ async function bajarAca(sh) {
   if (res === 'saved') toast('Se bajó el PDF de ' + sh.title + '.');
 }
 iniciarRecibidos();
+
+/* ---------- Planillas Excel por sección (solo en las compus) ---------- */
+const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+let xlsxP = null;
+function cargarExcelJS() {
+  if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  return xlsxP || (xlsxP = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = XLSX_URL;
+    sc.onload = () => window.ExcelJS ? res(window.ExcelJS) : rej(new Error('no cargó'));
+    sc.onerror = () => { xlsxP = null; rej(new Error('No se pudo cargar el generador de Excel. Revisá internet.')); };
+    document.head.append(sc);
+  }));
+}
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+let XL_MES = (() => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1); })();
+const mesTxt = m => m ? MESES[+m.slice(5, 7) - 1] + ' ' + m.slice(0, 4) : 'todo';
+function minDif(a, b) { return Math.abs(new Date(b) - new Date(a)) / 60000; }
+const fDate = f => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(f || ''); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null; };
+const fHora = f => { const m = /T(\d\d:\d\d)/.exec(f || ''); return m ? m[1] : ''; };
+
+// Lecturas guardadas de esas planillas (una por cada "Guardar"). Si una planilla se volvió a guardar
+// dentro de los 90 minutos (corrección), queda solo la última.
+async function lecturasDe(ids, mes) {
+  const s = await FDB.collection(KTI_COL).where('tipo', '==', 'planilla').get();
+  const L = [];
+  s.forEach(d => {
+    const r = d.data();
+    if (!ids.includes(r.sheetId)) return;
+    const f = r.fechaPdf || r.fecha || '';
+    if (mes && f.slice(0, 7) !== mes) return;
+    let st = null; try { st = JSON.parse(r.estado); } catch (e) { return; }
+    L.push({ sheetId: r.sheetId, fecha: f, ts: r.clientTs || 0, operador: r.operador || '', v: (st && st.v && st.v[r.sheetId]) || {} });
+  });
+  L.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.ts - b.ts));
+  const out = [];
+  for (const x of L) {
+    for (let i = out.length - 1; i >= 0; i--) if (out[i].sheetId === x.sheetId) { if (minDif(out[i].fecha, x.fecha) < 90) out.splice(i, 1); break; }
+    out.push(x);
+  }
+  return out;
+}
+
+/* ---- estilos ---- */
+const XB = s => ({ top: { style: s }, left: { style: s }, bottom: { style: s }, right: { style: s } });
+const XFILL = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+const XC = { center: { horizontal: 'center', vertical: 'middle', wrapText: true } };
+function xcell(ws, r, c, value, o) {
+  const cell = ws.getCell(r, c);
+  if (value !== undefined) cell.value = value;
+  o = o || {};
+  cell.font = Object.assign({ name: 'Arial', size: 10 }, o.font || {});
+  cell.alignment = o.align || XC.center;
+  if (o.border !== false) cell.border = XB(o.border || 'thin');
+  if (o.fill) cell.fill = XFILL(o.fill);
+  if (o.numFmt) cell.numFmt = o.numFmt;
+  return cell;
+}
+function xmerge(ws, r1, c1, r2, c2, value, o) { if (r1 !== r2 || c1 !== c2) ws.mergeCells(r1, c1, r2, c2); return xcell(ws, r1, c1, value, o); }
+const xval = v => { if (v === undefined || v === null || v === '') return null; const n = toNum(v); return n !== null && /^-?[\d.,]+$/.test(String(v).trim()) ? n : String(v); };
+const LOGO = { richText: [{ text: 'FLUXUS\n', font: { name: 'Arial Black', size: 18, bold: true, color: { argb: 'FF1F2A36' } } }, { text: 'Oil, Gas & Energy', font: { name: 'Arial', size: 9, bold: true, color: { argb: 'FF1F2A36' } } }] };
+
+/* ---- Recompresores: una hoja por equipo, una fila por lectura ---- */
+
+/* ---- Motocompresores y TurboExpander: datos en filas, una columna por lectura ---- */
+const MC_ROWS = [['PI5107 Presión de succion DCS', 'pi5107'], ['FI5107 Caudal gas en baja presión', 'fi5107'], ['Presion de Succión', 'p_succ'], ['Presión descarga 1° etapa', 'p_d1'], ['Presión descarga 2° etapa', 'p_d2'], ['Presión descarga 3° etapa', 'p_d3'], ['Presión Aceite Motor', 'p_ac_mot'], ['Presión aceite Compresor', 'p_ac_comp'], ['Presión refrigerante Sist. Principal', 'p_ref_pri'], ['Presión refrigerante Sist. Aux', 'p_ref_aux'], ['Presión manifold de aire Bco.Izq', 'p_air_izq'], ['Presión Carter', 'p_carter'], ['Presión manifold de aire Bco.Der', 'p_air_der'], ['Vibración Motor Lado Acople', 'vib_mot_ac'], ['Vibración Motor Lado Libre', 'vib_mot_li'], ['Vibración Compresor Lado Acople', 'vib_comp_ac'], ['Vibración Compresor Lado Libre', 'vib_comp_li'], ['Vibración Cooler', 'vib_cooler'], ['Temperatura Refigerante Sist.Principal', 't_ref_pri'], ['Temperatura Refigerante Sist.Auxiliar', 't_ref_aux'], ['Temperatura Aceite Compresor', 't_ac_comp'], ['Temperatura Aceite Motor', 't_ac_mot']]
+  .concat([1, 2, 3, 4].map(i => ['Temperatura desc. Compresor Throw #' + i, 't_thr' + i]))
+  .concat([1, 2, 3, 4, 5, 6, 7].map(i => ['Temperatura Cojinete Bancada Motor #' + i, 't_coj' + i]))
+  .concat([['Temperatura entrada Turbo Bco. Izq.', 't_turbo_izq'], ['Temperatura entrada Turbo Bco. Der.', 't_turbo_der'], ['Temperatura Succión', 't_succ'], ['Temperatura Ambiente', 't_amb']])
+  .concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => ['Temperatura Escape cilindro #' + i, 't_esc' + i]))
+  .concat([['Presión diferencial Filtros compresor (PSI)', 'dp_filt_comp'], ['Presión diferencial Filtros motor (PSI)', 'dp_filt_mot'], ['Porcentaje de carga (max 85%) ESM', 'carga_esm'], ['Nivel de aceite motor', 'niv_ac_mot'], ['Nivel aceite compresor', 'niv_ac_comp'], ['Nivel refrigerante Pricipal', 'niv_ref_pri'], ['Nivel refrigerante Auxiliar', 'niv_ref_aux'], ['R.P.M.   Motor', 'rpm']]);
+function hojaVertical(wb, nombreHoja, titulo, rows, lect, dia, minCols) {
+  const ws = wb.addWorksheet(nombreHoja, { views: [{ state: 'frozen', xSplit: 1, ySplit: 5 }] });
+  ws.getColumn(1).width = 48;
+  const nCols = Math.max(lect.length, minCols || 12);
+  for (let c = 2; c <= 1 + nCols; c++) ws.getColumn(c).width = 9;
+  ws.getRow(1).height = 14; ws.getRow(2).height = 30; ws.getRow(3).height = 22; ws.getRow(4).height = 20;
+  xmerge(ws, 1, 1, 3, 1, LOGO, { border: 'medium' });
+  xcell(ws, 4, 1, titulo, { font: { bold: true, size: 12 }, border: 'medium' });
+  xcell(ws, 5, 1, 'Hs.', { font: { bold: true, size: 12 }, border: 'medium' });
+  rows.forEach((rw, i) => xcell(ws, 6 + i, 1, rw[0], { font: { bold: true, size: 12 }, border: 'medium' }));
+  for (let j = 0; j < nCols; j++) {
+    const x = lect[j], c = 2 + j;
+    xcell(ws, 4, c, x ? fDate(x.fecha) : (dia ? fDate(dia) : null), { numFmt: 'd-mmm', font: { size: 11 } });
+    xcell(ws, 5, c, x ? fHora(x.fecha) : null, { font: { bold: true, size: 11 } });
+    rows.forEach((rw, i) => xcell(ws, 6 + i, c, x ? xval(x.v[rw[1]]) : null, { font: { size: 11 } }));
+  }
+}
+// Motocompresores del día: la columna de nombres una sola vez y los 5 equipos uno al lado del otro
+
+/* ---- Tanques: una hoja por día, una columna por horario ---- */
+const TANQ = [['PROPANO #1', 't1', 258, 'FF1F4FD8'], ['BUTANO #2', 't2', 258, 'FF000000'], ['BUTANO #3', 't3', 258, 'FF000000'], ['BUTANO #4', 't4', 318, 'FF000000'], ['PROPANO #5', 't5', 316, 'FF1F4FD8'], ['PROPANO #6', 't6', 316, 'FF1F4FD8'], ['GASOLINA #7', 't7', 340, 'FF000000']];
+const TEAL = 'FF9BE3E3';
+function hojaTanques(wb, nombre, lect, dia) {
+  const ws = wb.addWorksheet(nombre);
+  const n = Math.max(lect.length, 6), C0 = 4, last = C0 + n - 1;
+  ws.getColumn(1).width = 7; ws.getColumn(2).width = 17; ws.getColumn(3).width = 22;
+  for (let c = C0; c <= last; c++) ws.getColumn(c).width = 13;
+  const lab = { font: { bold: true, size: 9 }, fill: TEAL };
+  xmerge(ws, 1, 1, 1, 2, 'Compresor aire LPG K-502 B', lab); xcell(ws, 1, 3, 'Horas Totales', { font: { size: 9 } });
+  xmerge(ws, 2, 1, 2, 2, 'Secador aire LPG S-501', lab); xcell(ws, 2, 3, 'Estado de funcionamiento', { font: { size: 9 } });
+  for (let c = C0; c <= last; c++) { xcell(ws, 1, c, null); xcell(ws, 2, c, null); }
+  ws.getRow(3).height = 5;
+  xmerge(ws, 4, 1, 4, 2, dia ? fDate(dia) : null, { numFmt: 'dddd d/mm/yyyy', font: { bold: true, size: 10 }, border: 'medium' });
+  xcell(ws, 4, 3, 'Hs', lab);
+  for (let j = 0; j < n; j++) xcell(ws, 4, C0 + j, lect[j] ? fHora(lect[j].fecha) + ' Hs' : null, { font: { bold: true, size: 10 } });
+  let r = 5;
+  const first = r;
+  for (const [nm, p, max, color] of TANQ) {
+    const filas = p === 't7'
+      ? [['alt', p + '_niv'], ['Contador Volum.', null]]
+      : [['alt', p + '_niv'], ['Presión', p + '_p'], ['Temperatura', p + '_t'], ['E/Carga', p + '_carga']];
+    xmerge(ws, r, 2, r + filas.length - 1, 2, nm, { font: { bold: true, size: 11, color: { argb: color } }, fill: TEAL, border: 'medium' });
+    filas.forEach(([lb, key], i) => {
+      const label = lb === 'alt' ? { richText: [{ text: 'Altura (', font: { name: 'Arial', bold: true, size: 9 } }, { text: 'máx ' + max + ' cm', font: { name: 'Arial', bold: true, size: 9, color: { argb: 'FFE00000' } } }, { text: ')', font: { name: 'Arial', bold: true, size: 9 } }] }
+        : lb === 'E/Carga' ? { richText: [{ text: 'E/Carga (', font: { name: 'Arial', bold: true, size: 9 } }, { text: 'X', font: { name: 'Arial', bold: true, size: 9, color: { argb: 'FFE00000' } } }, { text: ')', font: { name: 'Arial', bold: true, size: 9 } }] }
+          : lb;
+      xcell(ws, r + i, 3, label, lab);
+      for (let j = 0; j < n; j++) {
+        const x = lect[j], v = x && key ? x.v[key] : null;
+        if (lb === 'E/Carga') xcell(ws, r + i, C0 + j, v ? 'X' : null, { font: { bold: true, color: { argb: 'FFE00000' } } });
+        else if (lb === 'alt') xcell(ws, r + i, C0 + j, v ? toNum(v) : null, { numFmt: '0" Cm."' });
+        else if (lb === 'Presión') xcell(ws, r + i, C0 + j, v ? toNum(v) : null, { numFmt: '0.0" Kgs/cm2"' });
+        else if (lb === 'Temperatura') xcell(ws, r + i, C0 + j, v ? toNum(v) : null, { numFmt: '0" °C"' });
+        else xcell(ws, r + i, C0 + j, null);
+      }
+    });
+    r += filas.length;
+  }
+  xmerge(ws, first, 1, r - 1, 1, 'Tanques LPG', { font: { bold: true, size: 11 }, fill: TEAL, border: 'medium', align: { horizontal: 'center', vertical: 'middle', textRotation: 90 } });
+  xmerge(ws, r, 1, r + 1, 2, 'DESPACHADO', { font: { bold: true, size: 12 }, border: 'medium' });
+  xcell(ws, r, 3, 'P R O P A N O', lab); xcell(ws, r + 1, 3, 'B U T A N O', lab);
+  for (let j = 0; j < n; j++) { xcell(ws, r, C0 + j, null); xcell(ws, r + 1, C0 + j, null); }
+  r += 2;
+  xmerge(ws, r, 1, r, last, 'OBSERVACIONES:', { font: { bold: true, color: { argb: 'FFE00000' } }, fill: 'FFE6E6E6', align: { horizontal: 'left', vertical: 'middle' } });
+  const ops = [...new Set(lect.map(x => x.operador).filter(Boolean))];
+  if (ops.length) { r++; xmerge(ws, r, 1, r, last, 'Cargado por: ' + ops.join(', '), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } }); }
+}
+
+/* ---- Carga de aceite: un bloque por fecha ---- */
+// altura (cm) que corresponde a esos litros en el recipiente de carga (560 x 850 mm, 209 L)
+function alturaDeLitros(L) {
+  const lit = toNum(L);
+  if (lit === null || lit <= 0) return null;
+  let lo = 0, hi = 100;
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2, c = compCalc(mid); if (c.vNow < lit) lo = mid; else hi = mid; }
+  return Math.round(COMP.D * hi / 100);
+}
+const ACEITE_EQ = [['1  Pamco', 'mc1'], ['2  Pamco', 'mc2'], ['3  Pamco', 'mc3'], ['5  Pamco', 'mc5'], ['6  Pamco', 'mc6'], ['4  RC', 'rc4'], ['7  RC', 'rc7'], ['8  RC', 'rc8']];
+function hojaAceite(wb, lect, nombre, diaFijo) {
+  const ws = wb.addWorksheet(nombre || 'Carga de aceite', { views: [{ state: 'frozen', ySplit: 6 }] });
+  const porDia = new Map();
+  if (diaFijo) porDia.set(diaFijo, []);
+  for (const x of lect) { const d = x.fecha.slice(0, 10); if (!porDia.has(d)) porDia.set(d, []); porDia.get(d).push(x); }
+  const dias = [...porDia.keys()].sort();
+  const lts = (arr, k) => { let t = 0, hay = false; arr.forEach(x => { const n = toNum(x.v[k]); if (n !== null) { t += n; hay = true; } }); return hay ? t : null; };
+  dias.forEach((d, bi) => {
+    const c0 = 1 + bi * 8, arr = porDia.get(d), main = arr.slice(0, 1), extra = arr.slice(1);
+    [8, 13, 10, 9, 10, 9, 9, 3].forEach((w, i) => ws.getColumn(c0 + i).width = w);
+    const top = { border: false, align: { horizontal: 'left', vertical: 'middle' } };
+    xcell(ws, 1, c0 + 1, 'Aceite', Object.assign({ font: { bold: true, size: 12, color: { argb: 'FFC00000' } } }, top));
+    xcell(ws, 1, c0 + 2, 'Calibración', top); xcell(ws, 1, c0 + 3, 209, top); xcell(ws, 1, c0 + 4, 'Litros', top);
+    xcell(ws, 2, c0 + 1, 'Diámetro', top); xcell(ws, 2, c0 + 3, '560 mm', top);
+    xcell(ws, 3, c0 + 1, 'Longitud', top); xcell(ws, 3, c0 + 3, '850 mm', top);
+    xmerge(ws, 4, c0 + 2, 4, c0 + 5, 'FECHA', { font: { bold: true, size: 11 }, border: false });
+    xmerge(ws, 5, c0 + 2, 5, c0 + 3, fDate(d), { numFmt: 'd/mm/yyyy', font: { bold: true, size: 12 }, fill: TEAL, border: 'medium' });
+    xmerge(ws, 5, c0 + 4, 5, c0 + 5, 'CARGA EXTRA', { font: { bold: true, size: 10 }, fill: TEAL, border: 'medium' });
+    xmerge(ws, 5, c0, 6, c0 + 1, 'NUMERO DE EQUIPO', { font: { bold: true, size: 10 }, fill: TEAL, border: 'medium' });
+    const hAlt = { font: { bold: true, size: 8 }, fill: TEAL }, hLts = { font: { bold: true, size: 10 }, fill: 'FFFFFF00' };
+    xcell(ws, 6, c0 + 2, 'Colocar Altura en cm', hAlt); xcell(ws, 6, c0 + 3, 'Lts. de Aceite', hLts);
+    xcell(ws, 6, c0 + 4, 'Colocar Altura en cm', hAlt); xcell(ws, 6, c0 + 5, 'Lts. de Aceite', hLts);
+    xcell(ws, 5, c0 + 6, null, { fill: 'FFFFFF00', border: 'medium' }); xcell(ws, 6, c0 + 6, 'Total Carga', hLts);
+    ws.getRow(6).height = 30;
+    const L = ws.getColumn(c0 + 3).letter, LX = ws.getColumn(c0 + 5).letter, LT = ws.getColumn(c0 + 6).letter;
+    let r = 7;
+    const fila = (key, label2) => {
+      const a = lts(main, key), b = lts(extra, key);
+      xcell(ws, r, c0 + 1, label2, { font: { bold: true, size: 10 }, align: { horizontal: 'left', vertical: 'middle' } });
+      xcell(ws, r, c0 + 2, alturaDeLitros(a), { font: { bold: true, color: { argb: 'FF1F4FD8' } } });
+      xcell(ws, r, c0 + 3, a === null ? 0 : Math.round(a * 10) / 10, { font: { bold: true } });
+      xcell(ws, r, c0 + 4, alturaDeLitros(b), { font: { bold: true, color: { argb: 'FF1F4FD8' } } });
+      xcell(ws, r, c0 + 5, b === null ? 0 : Math.round(b * 10) / 10, { font: { bold: true } });
+      xcell(ws, r, c0 + 6, { formula: L + r + '+' + LX + r, result: Math.round(((a || 0) + (b || 0)) * 10) / 10 }, { font: { bold: true } });
+      r++;
+    };
+    for (const [nm, id] of ACEITE_EQ) {
+      xmerge(ws, r, c0, r + 1, c0, nm, { font: { bold: true, size: 10 } });
+      fila(id + '_comp', 'COMPRESOR'); fila(id + '_mot', 'MOTOR');
+    }
+    xcell(ws, r, c0, '9  RC', { font: { bold: true, size: 10 } }); fila('rc9', 'Comp- Motor');
+    for (const nm of ['BOOSTER K-101', 'K-401A', 'K-401B']) {
+      xmerge(ws, r, c0, r, c0 + 1, nm, { font: { bold: true, size: 10 }, fill: TEAL });
+      for (let c = c0 + 2; c <= c0 + 6; c++) xcell(ws, r, c, null);
+      r++;
+    }
+    xmerge(ws, r, c0 + 4, r, c0 + 5, 'Carga Total', { font: { bold: true, size: 11 }, border: 'medium' });
+    const totVal = (() => { let t = 0; for (const [, id] of ACEITE_EQ) { t += (lts(arr, id + '_comp') || 0) + (lts(arr, id + '_mot') || 0); } return Math.round((t + (lts(arr, 'rc9') || 0)) * 10) / 10; })();
+    xcell(ws, r, c0 + 6, { formula: 'SUM(' + LT + '7:' + LT + (r - 1) + ')', result: totVal }, { font: { bold: true, size: 11 }, border: 'medium' });
+    const ops = [...new Set(arr.map(x => x.operador).filter(Boolean))];
+    if (ops.length) xmerge(ws, r + 1, c0, r + 1, c0 + 6, 'Cargado por: ' + ops.join(', '), { font: { size: 8, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+  });
+}
+
+const LOGO_B64 = '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';
+const TURBO_ROWS = [["Presión Entrada Expansor (Exp. In P) (PIC 301B)", 820, 850, "PSI", "exp_in_p"], ["Temperatura Entrada Expansor (Exp. In  T)(TI0314)", -15, -31, "°F", "exp_in_t"], ["Presión Salida Expansor (Exp. Out  P) (PIC 306)", 280, 257, "PSI", "exp_out_p"], ["Temperatura Salida Expansor (Exp. Out  T)(TI0326)", -85, -125, "°F", "exp_out_t"], ["Presión Rueda Expansor (Exp. Wheel  P) PI-4", 260, 300, "PSI", "exp_wheel_p"], ["Presión Entrada Compresor (Comp. In  P) PI-309 (PIC0302)", 300, 350, "PSI", "comp_in_p"], ["Temperatura Entrada Compresor (Comp. In  T) TI0301", null, 110, "°F", "comp_in_t"], ["Presión Salida Compresor (Comp. Out  P) PI-307", null, null, "PSI", "comp_out_p"], ["Temperatura Salida Compresor (Comp Out  T)", null, null, "°F", "comp_out_t"], ["Presión Rueda Compresor (Comp. Wheel  P) PI-8", null, null, "PSI", "comp_wheel_p"], ["Presión Empuje Expansor (Drive Bearing Thrust PI-6)", null, null, "PSI", "exp_thrust"], ["Presión Empuje Compresor (Load Bearing Thurst PI-7)", null, null, "PSI", "comp_thrust"], ["Presión Reservorio (Reservoir  P) PI-2", null, null, "PSI", "res_p"], ["Temperatura Reservorio (Reservoir T)", null, null, "°F", "res_t"], ["Presión Aceite Lubricante (Lube Oil  P) PI-3", null, 440, "PSI", "lube_p"], ["Diferencia de Presión Aceite Lubricante (Lube Oil  DP)", null, null, "PSI", "lube_dp"], ["Presión Gas de Sello (Seal Gas  P) PI-5", null, 315, "PSI", "seal_p"], ["Diferencia de Presión Gas de Sello (Seal Gas  DP)", null, 15, "PSI", "seal_dp"], ["RPM", null, 40000, "RPM", "rpm"], ["Temperatura Cojinetes Expansor (Exp. Brg.  T)", 200, 210, "°F", "exp_brg_t"], ["Temperatura Cojinetes Compresor (Comp. Brg.  T)", 200, 210, "°F", "comp_brg_t"], ["Vibración X Expansor (Exp. Vib.  X)", 1.1, 1.5, "MILS", "exp_vib"], ["Vibración X Compresor (Comp. Vib. X)", 1.1, 1.5, "MILS", "comp_vib"], ["Temperatura Entrada Aceite Lubricante (Lube Oil In T)", null, null, "°F", "lube_in_t"], ["Temperatura Aceite Drenaje (Oil Drain  T)", null, null, "°F", "drain_t"], ["Temperatura Entrada Gas de Sello (Seal Gas In  T)", null, null, "°F", "seal_in_t"], ["% Aletas Guías (PIC0301B)", null, null, "%", "aletas"], ["JT % (PIC0301A)", null, null, "%", "jt"], ["Reciclo FIC0301 (Recycle  %) Porcentaje apertura", null, null, "%", "reciclo"], ["FIC0301 Valor de caudal (porcentaje)", null, null, "%", "caudal_pct"], ["Flujo Expansor (FIC0101)", null, null, "MMSCFD", "flujo_exp"], ["Flujo Compresor (FI0102+FIC0201)", null, null, "MMSCFD", "flujo_comp"], ["T° Ambiente (TI0100) (°F)", null, null, "°F", "t_amb"], ["Presión Suministro Gas de Sello", null, null, "PSI", "seal_sup_p"], ["T° Suministro Gas de Sello", null, null, "°F", "seal_sup_t"], ["Caudal Gas de Sello FI-1", null, null, "SCFM", "seal_q"], ["NIVEL ACEITE RESERVORIO", 75, 85, "", "res_nivel"]];
+const RC_COLS = [["Caudal de Succión", "MMSCFD", "q_succ", 9.14], ["T. Ambiente", "°C", "t_amb", 5.29], ["R.P.M.   Motor", "RPM", "rpm", 6.29], ["Pres de Dif Filtros Aceite  Motor", "PSI", "dp_ac_mot", 6.14], ["Pres de Aceite  Motor Tablero", "PSI", "p_ac_mot", 7], ["Pres de Aceite  Compresor Tablero", "PSI", "p_ac_comp_tab", 7], ["Pres de Aceite  Compresor Entrada", "PSI", "p_ac_comp_ent", 7], ["Pres de Aceite  Compresor Salida", "PSI", "p_ac_comp_sal", 7.0], ["Pres Desc Comp Cilindro 1", "PSI", "p_d_c1", 7], ["Pres Desc Comp Cilindro 2", "PSI", "p_d_c2", 7.57], ["Temp Descarga Cilindro Izquierdo", "°F", "t_d_izq", 8.0], ["Temp Descarga Cilindro Derecho", "°F", "t_d_der", 7.71], ["Pres Succión Compresor", "PSI", "p_succ", 6.14], ["Temp Admision Motor Banco Izq.", "°F", "t_adm_izq", 7], ["Temp Admision Motor Banco Der.", "°F", "t_adm_der", 7], ["Temperatura  Aceite Motor", "°F", "t_ac_mot", 6.29], ["Temperatura Aceite Compresor", "°F", "t_ac_comp", 7], ["Temperatura Agua Principal", "°F", "t_agua", 6.14], ["Presión Multiple Admisión Izquierdo", "in Hg", "p_mult_izq", 7], ["Presión Multiple Admisión Derecho", "in Hg", "p_mult_der", 7], ["Filtros de aire Derecho", "", "fa_der", 7], ["Filtros de aire Izquierdo", "", "fa_izq", 7.0]];
+const RC9_COLS = [["Caudal de Succión", "MMSCFD", "q_succ", 9.14], ["T. Ambiente", "°C", "t_amb", 5.29], ["Pres de Dif Filtros Aceite  Motor", "PSI", "dp_ac_mot", 6.29], ["Pres de Aceite  Compresor Entrada", "PSI", "p_ac_ent", 6.14], ["Pres de Aceite  Compresor Salida", "PSI", "p_ac_sal", 7], ["Pres Succión Compresor 1 st", "PSI", "p_succ", 8.14], ["Pres Descarga Compresor 1st", "PSI", "p_desc", 7.0], ["Pres de Aceite  Compresor", "PSI", "p_ac_comp", 6.14], ["Temp Succión Compresor", "°F", "t_succ", 7], ["Temp Descarga Cilindro 1", "°F", "t_d1", 7.57], ["Temp Descarga Cilindro 2", "°F", "t_d2", 6.86], ["Temperatura Aceite Compresor", "°F", "t_ac_comp", 7.0], ["R.P.M.   Motor", "RPM", "rpm", 6.71], ["Pres de Aceite  Motor", "PSI", "p_ac_mot", 6.14], ["Temperatura Agua Principal", "°F", "t_agua", 7], ["Temperatura  Aceite Motor", "°F", "t_ac_mot", 6.29], ["Filtros de aire Derecho", "", "fa_der", 7], ["Filtros de aire Izquierdo", "", "fa_izq", 6.14]];
+/* ---- formato copiado de las planillas reales ---- */
+const fHoraNum = f => { const m = /T(\d\d):(\d\d)/.exec(f || ''); return m ? (+m[1] * 60 + +m[2]) / 1440 : null; };
+function logoId(wb) { if (wb._ktiLogo === undefined) wb._ktiLogo = wb.addImage({ base64: LOGO_B64, extension: 'png' }); return wb._ktiLogo; }
+function xs(ws, r, c, value, o) { // celda con estilo "de planilla": borde fino salvo que se pida otro
+  return xcell(ws, r, c, value, Object.assign({ align: { horizontal: 'center', vertical: 'middle' } }, o || {}));
+}
+
+/* Recompresores: los 4 equipos uno debajo del otro en la hoja del día */
+function bloqueRC(wb, ws, r0, n, cols, lect, dia, banda) {
+  const last = 3 + cols.length;
+  [19.5, 15.75, 24, 64.5, 15.75].forEach((hh, i) => ws.getRow(r0 + i).height = hh);
+  xmerge(ws, r0, 2, r0 + 1, 3, 'ReCompresor #' + pad2(n), { font: { bold: true, size: 10 }, border: 'medium' });
+  xmerge(ws, r0 + 1, 4, r0 + 1, last, banda, { font: { name: 'Calibri', bold: true, size: 11 }, border: 'medium' });
+  for (let c = 2; c <= 3; c++) for (let r = r0 + 2; r <= r0 + 3; r++) xcell(ws, r, c, null, { border: 'medium' });
+  ws.mergeCells(r0 + 2, 2, r0 + 3, 3);
+  ws.addImage(logoId(wb), { tl: { col: 1.08, row: r0 + 2 + 0.25 }, ext: { width: 168, height: 49 }, editAs: 'oneCell' });
+  xs(ws, r0 + 4, 2, 'FECHA', { font: { size: 9 }, border: 'medium' }); xs(ws, r0 + 4, 3, 'HORA', { font: { size: 9 }, border: 'medium' });
+  cols.forEach((c, i) => {
+    xmerge(ws, r0 + 2, 4 + i, r0 + 3, 4 + i, c[0], { font: { bold: true, size: 9 }, border: 'medium', align: { horizontal: 'center', vertical: 'middle', textRotation: 90, wrapText: true } });
+    xs(ws, r0 + 4, 4 + i, c[1] ? '[' + c[1] + ']' : null, { font: { size: 9 }, border: 'medium' });
+  });
+  const nf = Math.max(lect.length, 2);
+  for (let i = 0; i < nf; i++) {
+    const r = r0 + 5 + i, x = lect[i];
+    ws.getRow(r).height = 15.75;
+    xs(ws, r, 2, fDate(x ? x.fecha : dia), { numFmt: 'dd/mm/yyyy', font: { size: 9 } });
+    xs(ws, r, 3, x ? fHoraNum(x.fecha) : null, { numFmt: 'h:mm', font: { size: 9, bold: true } });
+    cols.forEach((c, j) => xs(ws, r, 4 + j, x ? xval(x.v[c[2]]) : null));
+  }
+  return r0 + 5 + nf + 2;
+}
+// Datos de los recompresores en filas (fácil de leer). [nombre, unidad, clave RC#4-7-8, clave RC#9]
+const RC_FILAS = [
+  ['Motor'],
+  ['R.P.M.  Motor', 'RPM', 'rpm', 'rpm'],
+  ['Presión diferencial filtros aceite motor', 'PSI', 'dp_ac_mot', 'dp_ac_mot'],
+  ['Presión aceite motor (tablero)', 'PSI', 'p_ac_mot', 'p_ac_mot'],
+  ['Temperatura aceite motor', '°F', 't_ac_mot', 't_ac_mot'],
+  ['Temperatura agua principal', '°F', 't_agua', 't_agua'],
+  ['Temperatura admisión motor banco izq.', '°F', 't_adm_izq', null],
+  ['Temperatura admisión motor banco der.', '°F', 't_adm_der', null],
+  ['Presión múltiple admisión izquierdo', 'in Hg', 'p_mult_izq', null],
+  ['Presión múltiple admisión derecho', 'in Hg', 'p_mult_der', null],
+  ['Compresor'],
+  ['Caudal de succión', 'MMSCFD', 'q_succ', 'q_succ'],
+  ['Presión succión compresor', 'PSI', 'p_succ', 'p_succ'],
+  ['Presión descarga cilindro 1', 'PSI', 'p_d_c1', null],
+  ['Presión descarga cilindro 2', 'PSI', 'p_d_c2', null],
+  ['Presión descarga compresor 1st', 'PSI', null, 'p_desc'],
+  ['Temperatura succión compresor', '°F', null, 't_succ'],
+  ['Temperatura descarga cilindro izq. / 1', '°F', 't_d_izq', 't_d1'],
+  ['Temperatura descarga cilindro der. / 2', '°F', 't_d_der', 't_d2'],
+  ['Presión aceite compresor (tablero)', 'PSI', 'p_ac_comp_tab', 'p_ac_comp'],
+  ['Presión aceite compresor entrada', 'PSI', 'p_ac_comp_ent', 'p_ac_ent'],
+  ['Presión aceite compresor salida', 'PSI', 'p_ac_comp_sal', 'p_ac_sal'],
+  ['Temperatura aceite compresor', '°F', 't_ac_comp', 't_ac_comp'],
+  ['Ambiente y filtros'],
+  ['Temperatura ambiente', '°C', 't_amb', 't_amb'],
+  ['Filtros de aire derecho', '', 'fa_der', 'fa_der'],
+  ['Filtros de aire izquierdo', '', 'fa_izq', 'fa_izq'],
+];
+function hojaRCdia(wb, nombre, dia, de) {
+  const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', xSplit: 2, ySplit: 5, showGridLines: false }] });
+  ws.getColumn(1).width = 44; ws.getColumn(2).width = 11;
+  ws.getRow(1).height = 22; ws.getRow(2).height = 22; ws.getRow(3).height = 24; ws.getRow(4).height = 20; ws.getRow(5).height = 18;
+  xmerge(ws, 1, 1, 3, 2, null, { border: 'medium' });
+  ws.addImage(logoId(wb), { tl: { col: 0.15, row: 0.3 }, ext: { width: 270, height: 79 }, editAs: 'oneCell' });
+  xcell(ws, 4, 1, 'Datos Operativos Recompresores', { font: { bold: true, size: 12 }, border: 'medium' });
+  xcell(ws, 4, 2, 'Unidad', { font: { bold: true, size: 10 }, border: 'medium' });
+  xcell(ws, 5, 1, 'Hs.', { font: { bold: true, size: 12 }, border: 'medium' });
+  xcell(ws, 5, 2, null, { border: 'medium' });
+  const GRIS = 'FFD9D9D9', SECC = 'FFDDEBF7', ZEBRA = 'FFF5F8FB';
+  // columna de nombres
+  let par = false;
+  RC_FILAS.forEach((f, i) => {
+    const r = 6 + i;
+    ws.getRow(r).height = f.length === 1 ? 18 : 17;
+    if (f.length === 1) { xcell(ws, r, 1, f[0].toUpperCase(), { font: { bold: true, size: 11, color: { argb: 'FF1F3864' } }, fill: SECC, border: 'medium', align: { horizontal: 'left', vertical: 'middle', indent: 1 } }); xcell(ws, r, 2, null, { fill: SECC, border: 'medium' }); par = false; return; }
+    const fz = par ? ZEBRA : null; par = !par;
+    xcell(ws, r, 1, f[0], { font: { size: 11 }, fill: fz, border: 'thin', align: { horizontal: 'left', vertical: 'middle', indent: 1 } });
+    xcell(ws, r, 2, f[1] ? '[' + f[1] + ']' : null, { font: { size: 9, color: { argb: 'FF555555' } }, fill: fz, border: 'thin' });
+  });
+  // un bloque de columnas por equipo
+  let c = 3;
+  for (const n of [4, 7, 8, 9]) {
+    const lect = de('rc' + n), k = Math.max(lect.length, 2), idx = n === 9 ? 3 : 2;
+    for (let j = 0; j < k; j++) ws.getColumn(c + j).width = 10;
+    xmerge(ws, 3, c, 3, c + k - 1, 'ReCompresor #' + pad2(n), { font: { bold: true, size: 12 }, border: 'medium', fill: 'FFE6E6E6' });
+    xmerge(ws, 4, c, 4, c + k - 1, fDate(dia), { numFmt: 'dd/mm/yyyy', font: { size: 11 }, border: 'medium' });
+    for (let j = 0; j < k; j++) {
+      const x = lect[j], cc = c + j;
+      xs(ws, 5, cc, x ? fHoraNum(x.fecha) : null, { numFmt: 'h:mm', font: { bold: true, size: 11 }, border: 'medium' });
+      let p2 = false;
+      RC_FILAS.forEach((f, i) => {
+        const r = 6 + i;
+        if (f.length === 1) { xs(ws, r, cc, null, { fill: SECC, border: 'medium' }); p2 = false; return; }
+        const key = f[idx], fz = p2 ? ZEBRA : null; p2 = !p2;
+        if (!key) xs(ws, r, cc, null, { fill: GRIS });
+        else xs(ws, r, cc, x ? xval(x.v[key]) : null, { font: { size: 11 }, fill: fz });
+      });
+    }
+    for (let r = 3; r <= 5 + RC_FILAS.length; r++) { const cl = ws.getCell(r, c); cl.border = Object.assign({}, cl.border, { left: { style: 'medium' } }); }
+    c += k;
+  }
+  const ops = [...new Set(['rc4', 'rc7', 'rc8', 'rc9'].flatMap(id => de(id)).map(x => x.operador).filter(Boolean))];
+  if (ops.length) xmerge(ws, 7 + RC_FILAS.length, 1, 7 + RC_FILAS.length, 2, 'Cargado por: ' + ops.join(', '), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+}
+
+/* Motocompresores: la columna de nombres una vez y los 5 equipos al lado (fecha arriba, hora abajo) */
+function hojaMCdia(wb, nombre, dia, de) {
+  const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', xSplit: 1, ySplit: 5, showGridLines: false }] });
+  ws.getColumn(1).width = 51;
+  ws.getRow(1).height = 22; ws.getRow(2).height = 22; ws.getRow(3).height = 27.75; ws.getRow(4).height = 28.5;
+  for (let r = 5; r <= 5 + MC_ROWS.length; r++) ws.getRow(r).height = 16.5;
+  xmerge(ws, 1, 1, 3, 1, null, { border: 'medium' });
+  ws.addImage(logoId(wb), { tl: { col: 0.12, row: 0.25 }, ext: { width: 300, height: 87 }, editAs: 'oneCell' });
+  xcell(ws, 4, 1, 'MotoCompresores', { font: { bold: true, size: 12 }, border: 'medium' });
+  xcell(ws, 5, 1, 'Hs.', { font: { bold: true, size: 12 }, border: 'medium' });
+  MC_ROWS.forEach((rw, i) => xcell(ws, 6 + i, 1, rw[0], { font: { bold: true, size: 12 }, border: 'medium' }));
+  let c = 2;
+  for (const n of [1, 2, 3, 5, 6]) {
+    const lect = de('mc' + n), k = Math.max(lect.length, 2);
+    for (let j = 0; j < k; j++) ws.getColumn(c + j).width = 9.5;
+    xmerge(ws, 3, c, 3, c + k - 1, 'MotoCompresor  #' + n, { font: { bold: true, size: 12 }, border: 'medium' });
+    xmerge(ws, 4, c, 4, c + k - 1, fDate(dia), { numFmt: 'd-mmm', font: { name: 'Calibri', size: 12 }, border: 'medium' });
+    for (let j = 0; j < k; j++) {
+      const x = lect[j], cc = c + j;
+      xs(ws, 5, cc, x ? fHoraNum(x.fecha) : null, { numFmt: 'h:mm', font: { name: 'Calibri', size: 12, bold: true }, border: 'medium' });
+      MC_ROWS.forEach((rw, i) => xs(ws, 6 + i, cc, x ? xval(x.v[rw[1]]) : null, { font: { size: 12 } }));
+    }
+    for (let r = 3; r <= 5 + MC_ROWS.length; r++) { const cl = ws.getCell(r, c); cl.border = Object.assign({}, cl.border, { left: { style: 'medium' } }); }
+    c += k;
+  }
+}
+
+/* TurboExpander: igual a "DATOS DE SEGUIMIENTO TURBOEXPANSOR" con Set Point y Unidad */
+function hojaTurboDia(wb, nombre, dia, lect) {
+  const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', xSplit: 4, ySplit: 3, showGridLines: false }] });
+  ws.getColumn(1).width = 69.3; ws.getColumn(2).width = 7.7; ws.getColumn(3).width = 10; ws.getColumn(4).width = 12.7;
+  const k = Math.max(lect.length, 2);
+  for (let j = 0; j < k; j++) ws.getColumn(5 + j).width = 16.6;
+  [16.5, 16.5, 16.5].forEach((hh, i) => ws.getRow(1 + i).height = hh);
+  xcell(ws, 2, 1, 'DATOS  DE  SEGUIMIENTO  TURBOEXPANSOR', { font: { bold: true, size: 12 }, border: 'medium' });
+  xcell(ws, 3, 1, 'Modelo: 13MTC  Serial:  646/0702', { font: { bold: true, size: 11 }, border: 'medium' });
+  xmerge(ws, 2, 2, 2, 3, 'Set Point', { font: { bold: true, size: 12 }, border: 'medium' });
+  xcell(ws, 3, 2, 'Min', { font: { size: 11 }, border: 'medium' }); xcell(ws, 3, 3, 'Máx', { font: { size: 11 }, border: 'medium' });
+  xmerge(ws, 2, 4, 3, 4, 'Unidad ', { font: { bold: true, size: 11 }, border: 'medium' });
+  for (let j = 0; j < k; j++) {
+    const x = lect[j];
+    xs(ws, 2, 5 + j, fDate(x ? x.fecha : dia), { numFmt: 'd-mmm-yy', font: { bold: true, size: 12 }, border: 'medium' });
+    xs(ws, 3, 5 + j, x ? fHoraNum(x.fecha) : null, { numFmt: 'h:mm', font: { size: 12 }, border: 'medium' });
+  }
+  TURBO_ROWS.forEach((rw, i) => {
+    const r = 4 + i;
+    ws.getRow(r).height = 15.75;
+    xcell(ws, r, 1, rw[0], { font: { size: 12 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle' } });
+    xs(ws, r, 2, rw[1], { font: { bold: true, size: 12, color: { argb: 'FF548235' } }, border: 'medium' });
+    xs(ws, r, 3, rw[2], { font: { bold: true, size: 12, color: { argb: 'FF548235' } }, border: 'medium' });
+    xs(ws, r, 4, rw[3] || null, { font: { size: 10 }, border: 'medium' });
+    for (let j = 0; j < k; j++) xs(ws, r, 5 + j, lect[j] ? xval(lect[j].v[rw[4]]) : null, { font: { size: 12 } });
+  });
+}
+
+/* Carga de aceite: el bloque de la planilla anual, para el día */
+const ACEITE_FILAS = [['1  Pamco', 'mc1'], ['2  Pamco', 'mc2'], ['3  Pamco', 'mc3'], ['5  Pamco', 'mc5'], ['6  Pamco', 'mc6'], ['4 RC', 'rc4'], ['7 RC', 'rc7'], ['8 RC', 'rc8']];
+function hojaAceiteDia(wb, nombre, dia, arr) {
+  const ws = wb.addWorksheet(nombre, { views: [{ showGridLines: false }] });
+  const C = 2; // V..AB de la planilla original => B..H
+  [2, 11.43, 13, 11.43, 9, 11.43, 9, 8.71].forEach((w, i) => ws.getColumn(1 + i).width = w);
+  const hts = { 1: 7.5, 2: 6.75, 3: 15.75, 6: 0.75, 8: 2.25, 9: 20.25, 10: 15, 11: 15.75, 28: 18, 31: 16.5, 32: 18 };
+  for (let r = 1; r <= 32; r++) ws.getRow(r).height = hts[r] || 15.75;
+  const lts = (list, k) => { let t = 0, hay = false; list.forEach(x => { const n = toNum(x.v[k]); if (n !== null) { t += n; hay = true; } }); return hay ? Math.round(t * 10) / 10 : null; };
+  const main = arr.slice(0, 1), extra = arr.slice(1);
+  const nb = { border: false, align: { horizontal: 'left', vertical: 'middle' } };
+  xcell(ws, 3, C + 1, 'Aceite ', Object.assign({}, nb, { font: { bold: true, size: 12, color: { argb: 'FFC00000' } } }));
+  xcell(ws, 3, C + 2, 'Calibración', Object.assign({}, nb, { align: { horizontal: 'right', vertical: 'middle' } }));
+  xcell(ws, 3, C + 3, 209, Object.assign({}, nb, { align: { horizontal: 'center', vertical: 'middle' }, numFmt: '0' }));
+  xcell(ws, 3, C + 4, 'Litros', nb);
+  xcell(ws, 4, C + 1, 'Diámetro', nb); xcell(ws, 4, C + 2, 560, Object.assign({}, nb, { align: { horizontal: 'center' } })); xcell(ws, 4, C + 3, 'mm', nb);
+  xcell(ws, 5, C + 1, 'Longitud', nb); xcell(ws, 5, C + 2, 850, Object.assign({}, nb, { align: { horizontal: 'center' } })); xcell(ws, 5, C + 3, 'mm', nb);
+  xmerge(ws, 7, C + 2, 7, C + 5, 'FECHA', { font: { bold: true, size: 10 }, border: false });
+  xmerge(ws, 9, C + 2, 9, C + 3, fDate(dia), { numFmt: 'd/mm/yyyy', font: { bold: true, size: 12 }, fill: TEAL, border: 'medium' });
+  xmerge(ws, 9, C + 4, 9, C + 5, 'CARGA EXTRA', { font: { bold: true, size: 9 }, fill: TEAL, border: 'medium' });
+  xmerge(ws, 10, C, 11, C + 1, 'NUMERO DE EQUIPO', { font: { name: 'Arial Narrow', bold: true, size: 12 }, fill: TEAL, border: 'medium' });
+  const hA = { font: { bold: true, size: 9 }, fill: TEAL, border: 'medium' }, hL = { font: { size: 12 }, fill: 'FFFFFF00', border: 'medium' };
+  xcell(ws, 10, C + 2, 'Colocar ', hA); xcell(ws, 11, C + 2, 'Altura en cm.', hA);
+  xmerge(ws, 10, C + 3, 11, C + 3, 'Lts. de Aceite', hL);
+  xcell(ws, 10, C + 4, 'Colocar ', hA); xcell(ws, 11, C + 4, 'Altura en cm.', hA);
+  xmerge(ws, 10, C + 5, 11, C + 5, 'Lts. de Aceite', hL);
+  xcell(ws, 10, C + 6, 'Total', { font: { size: 11 }, fill: 'FFFFFF00', border: 'medium' }); xcell(ws, 11, C + 6, 'Carga', { font: { size: 11 }, fill: 'FFFFFF00', border: 'medium' });
+  const LY = ws.getColumn(C + 3).letter, LA = ws.getColumn(C + 5).letter, LT = ws.getColumn(C + 6).letter;
+  let r = 12, total = 0;
+  const fila = (key, label2) => {
+    const a = lts(main, key), b = lts(extra, key);
+    total += (a || 0) + (b || 0);
+    xcell(ws, r, C + 1, label2, { font: { bold: true, size: 11 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle' } });
+    xs(ws, r, C + 2, alturaDeLitros(a), { font: { bold: true, size: 12, color: { argb: 'FF1F4FD8' } }, border: 'medium' });
+    xs(ws, r, C + 3, a === null ? 0 : a, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
+    xs(ws, r, C + 4, alturaDeLitros(b), { font: { bold: true, size: 12, color: { argb: 'FF1F4FD8' } }, border: 'medium' });
+    xs(ws, r, C + 5, b === null ? 0 : b, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
+    xs(ws, r, C + 6, { formula: '+' + LY + r + '+' + LA + r, result: Math.round(((a || 0) + (b || 0)) * 10) / 10 }, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
+    r++;
+  };
+  for (const [nm, id] of ACEITE_FILAS) {
+    xmerge(ws, r, C, r + 1, C, nm, { font: { bold: true, size: 12 }, border: 'medium' });
+    fila(id + '_comp', 'COMPRESOR'); fila(id + '_mot', 'MOTOR');
+  }
+  xcell(ws, r, C, '9 RC', { font: { bold: true, size: 12 }, border: 'medium' }); fila('rc9', 'Comp- Motor');
+  for (const nm of ['BOOSTER K-101', 'K-401A', 'K-401B']) {
+    xmerge(ws, r, C, r, C + 1, nm, { font: { bold: true, size: 12 }, fill: TEAL, border: 'medium' });
+    for (let c = C + 2; c <= C + 6; c++) xs(ws, r, c, nm === 'BOOSTER K-101' && (c === C + 3 || c === C + 5) ? 0 : null, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
+    r++;
+  }
+  xmerge(ws, 32, C + 4, 32, C + 5, ' Carga Total', { font: { bold: true, size: 11 }, border: 'medium' });
+  xs(ws, 32, C + 6, { formula: 'SUM(' + LT + '12:' + LT + '31)', result: Math.round(total * 10) / 10 }, { font: { bold: true, size: 11 }, border: 'medium', numFmt: '0' });
+  const ops = [...new Set(arr.map(x => x.operador).filter(Boolean))];
+  if (ops.length) xmerge(ws, 34, C, 34, C + 6, 'Cargado por: ' + ops.join(', ') + (arr.length > 1 ? ' (' + arr.length + ' cargas en el día)' : ''), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+}
+
+/* ---- armado y descarga ---- */
+const XL_SECC = [
+  { id: 'rec', label: 'Recompresores', ids: ['rc4', 'rc7', 'rc8', 'rc9'] },
+  { id: 'turbo', label: 'TurboExpander', ids: ['turbo'] },
+  { id: 'tanques', label: 'Tanques', ids: ['tanques'] },
+  { id: 'aceite', label: 'Carga de aceite', ids: ['cargas'] },
+  { id: 'mc', label: 'Motocompresores', ids: ['mc1', 'mc2', 'mc3', 'mc5', 'mc6'] },
+];
+async function bajarExcel(sec) {
+  if (!FB_OK) return toast('Sin conexión con el guardado compartido. Revisá internet.');
+  busy(true, 'Armando el Excel de ' + sec.label + '…');
+  try {
+    const [ExcelJS, lect] = await Promise.all([cargarExcelJS(), lecturasDe(sec.ids, XL_MES)]);
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Datos KTI';
+    const [yy, mm] = XL_MES.split('-').map(Number), nDias = new Date(yy, mm, 0).getDate();
+    const turboRows = BY.turbo.groups.flatMap(g => g.f).map(f => [f.l + (f.u ? ' (' + f.u + ')' : ''), f.k]);
+    for (let d = 1; d <= nDias; d++) {
+      const dia = XL_MES + '-' + pad2(d), nom = pad2(d);
+      const delDia = lect.filter(x => x.fecha.slice(0, 10) === dia);
+      const de = id => delDia.filter(x => x.sheetId === id);
+      if (sec.id === 'rec') hojaRCdia(wb, nom, dia, de);
+      else if (sec.id === 'mc') hojaMCdia(wb, nom, dia, de);
+      else if (sec.id === 'turbo') hojaTurboDia(wb, nom, dia, delDia);
+      else if (sec.id === 'tanques') hojaTanques(wb, nom, delDia, dia);
+      else if (sec.id === 'aceite') hojaAceiteDia(wb, nom, dia, delDia);
+    }
+    // abrir en el día de hoy (o el último con lecturas)
+    const hoy = new Date(), conDatos = [...new Set(lect.map(x => +x.fecha.slice(8, 10)))];
+    const activo = (hoy.getFullYear() === yy && hoy.getMonth() + 1 === mm) ? hoy.getDate() : (conDatos.length ? Math.max(...conDatos) : 1);
+    wb.views = [{ activeTab: activo - 1, firstSheet: Math.max(0, activo - 6), x: 0, y: 0, width: 20000, height: 12000 }];
+    const buf = await wb.xlsx.writeBuffer();
+    busy(false);
+    dlDirect(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'Planilla ' + sec.label + ' - ' + MESES[+XL_MES.slice(5, 7) - 1] + ' ' + XL_MES.slice(0, 4) + '.xlsx');
+    toast('Se bajó el Excel de ' + sec.label + ': una hoja por día, ' + (lect.length ? lect.length + (lect.length === 1 ? ' lectura cargada.' : ' lecturas cargadas.') : 'todavía sin lecturas.'));
+  } catch (e) { console.error(e); busy(false); toast('No se pudo armar el Excel: ' + (e.message || e)); }
+}
+function excelCard() {
+  const opts = [];
+  const d = new Date();
+  for (let i = 0; i < 13; i++) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1), m = x.getFullYear() + '-' + pad2(x.getMonth() + 1); opts.push(h('option', { value: m }, MESES[x.getMonth()][0].toUpperCase() + MESES[x.getMonth()].slice(1) + ' ' + x.getFullYear())); }
+  const sel = h('select', { class: 'txt xlmes', 'aria-label': 'Mes', onchange: e => { XL_MES = e.target.value || XL_MES; } }, opts);
+  sel.value = XL_MES;
+  return h('section', { class: 'xlcard' },
+    h('div', { class: 'xlh' }, h('h2', null, 'Planillas en Excel'), sel),
+    h('div', { class: 'xlbtns' }, XL_SECC.map(sc => h('button', { class: 'btn', type: 'button', onclick: () => bajarExcel(sc) }, sc.label))));
+}
 
 /* ---------- Historial ---------- */
 function histView() {
