@@ -365,9 +365,9 @@ const tog = (k, l) => ({ k, l, t: 'b' });
 const grid = (p, n) => Array.from({ length: n }, (_, i) => ({ k: p + (i + 1), l: '#' + (i + 1), u: '', t: 'n', neg: false }));
 /* Compensador de aceite (MC y RC, todos iguales): depósito cilíndrico horizontal, medidas según croquis.
    Se calcula con las dimensiones INTERIORES (descontando 0,3 cm de pared en diámetro y en longitud). */
+// Depósito de aceite de los equipos: misma cuenta que la planilla de carga (Ø 560 mm × 850 mm = 209 L)
 const COMP = (() => {
-  const DE = 57.5, ESP = 0.3, LE = 85;
-  const D = DE - 2 * ESP, R = D / 2, LI = LE - 2 * ESP;
+  const D = 56, R = D / 2, LI = 85;
   return { D, R, LI, VTOT: Math.PI * R * R * LI / 1000 };
 })();
 // pct = % que marca el visor (0-100 % de la altura interior). Devuelve cm y litros que hay y que faltan hasta el 100 %.
@@ -407,7 +407,8 @@ const fmtL = n => n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumF
 const cis = (k, k2, l) => ({ k, k2, l, t: 'c' });
 const fmt1 = n => (Math.round(n * 10) / 10).toFixed(1).replace('.', ',');
 // Nivel del visor (%) + carga realizada (litros). k = clave de la carga (litros); el visor se guarda en k_v
-const vis = (k, l) => ({ k, l, t: 'v', vk: k + '_v' });
+const vis = (k, l) => ({ k, l, t: 'v', vk: k + '_v', ck: k + '_cm' });
+const litrosDeCm = cm => { const n = toNum(cm); return n === null ? null : compCalc(Math.min(100, Math.max(0, n / COMP.D * 100))).vNow; };
 // Nivel con estado (OK/Bajo) y además un cuadro para el porcentaje (clave: <k>_p)
 const optp = (k, l, o) => Object.assign(opt(k, l, o), { pk: k + '_p' });
 const pctOf = f => ({ k: f.pk, l: f.l + ' (%)', u: '%', t: 'n', neg: false, max: 100 });
@@ -1224,7 +1225,7 @@ function normState(st) {
   for (const id of Object.keys(st.v)) {
     const sh = BY[id];
     if (!sh || sh.kind !== 'form') { delete st.v[id]; continue; }
-    const ks = new Set(sh.groups.flatMap(g => g.f.map(f => f.k)));
+    const ks = new Set(sh.groups.flatMap(g => g.f.flatMap(f => [f.k, f.vk, f.ck, f.k2, f.pk].filter(Boolean))));
     for (const k of Object.keys(st.v[id])) if (!ks.has(k)) delete st.v[id][k];
     if (!Object.keys(st.v[id]).length) delete st.v[id];
   }
@@ -1276,7 +1277,7 @@ function stats(sh) {
   if (sh.kind === 'list') { const n = S[sh.id].filter(entryHasData).length; return { n, total: 0, pct: n ? 100 : 0 }; }
   const fs = sh.groups.flatMap(g => g.f).filter(f => f.t === 'n' || f.t === 's' || f.t === 'v' || f.t === 'c');
   const v = S.v[sh.id] || {};
-  const n = fs.filter(f => v[f.k] || (f.vk && v[f.vk]) || (f.k2 && v[f.k2])).length;
+  const n = fs.filter(f => v[f.k] || (f.vk && v[f.vk]) || (f.ck && v[f.ck]) || (f.k2 && v[f.k2])).length;
   return { n, total: fs.length, pct: fs.length ? Math.round(100 * n / fs.length) : 0 };
 }
 const progText = sh => { const s = stats(sh); return s.n + '/' + s.total; };
@@ -1644,26 +1645,38 @@ function togEl(id, f) {
   return b;
 }
 const numOf = (sh, f) => numCtl({ value: val(sh.id, f.k), unit: f.u, neg: f.neg, max: f.max, ph: lastOf(sh.id, f.k), label: f.l, onChange: v => setVal(sh.id, f.k, v) });
+// Carga de aceite por visor: el operador pone el % del visor (el depósito está en altura) y la app
+// calcula la altura a completar en cm y los litros con la fórmula de la planilla (Ø 560 × 850 mm).
 function visorEl(sh, f) {
-  const res = h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--rule);font-size:15px;line-height:1.35' });
-  const lit = numOf(sh, { k: f.k, u: 'L', neg: false, l: f.l + ': carga de aceite en litros' });
-  const inp = lit.querySelector('input');
-  const paint = () => {
-    const c = compCalc(val(sh.id, f.vk));
-    res.textContent = '';
-    if (!c) { res.append(h('span', { style: 'color:var(--ink2)' }, 'Ingresá el % del visor para calcular.')); return; }
-    res.append(
-      h('div', null, 'Tiene: ', h('b', null, fmt1(c.hNow) + ' cm · ' + fmt1(c.vNow) + ' L')),
-      h('div', null, 'Falta para el 100 %: ', h('b', { style: 'color:var(--warn)' }, fmt1(c.hFalta) + ' cm · ' + fmt1(c.vFalta) + ' L')));
-    if (c.vFalta > 0.05) res.append(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', onclick: () => { inp.value = fmt1(c.vFalta); inp.dispatchEvent(new Event('input')); } }, 'Usar ' + fmt1(c.vFalta) + ' L como carga'));
+  const res = h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--rule);font-size:15px;line-height:1.4' });
+  const lit = numOf(sh, { k: f.k, u: 'L', neg: false, l: f.l + ': litros a cargar' });
+  const litInp = lit.querySelector('input');
+  const setLit = L => { litInp.value = L === null ? '' : fmt1(L); setVal(sh.id, f.k, litInp.value); };
+  const cm = numCtl({ value: val(sh.id, f.ck), unit: 'cm', max: COMP.D, label: f.l + ': altura en cm', onChange: v => { setVal(sh.id, f.ck, v); setLit(v === '' ? null : litrosDeCm(v)); paint(); } });
+  const cmInp = cm.querySelector('input');
+  const desdeVisor = v => {
+    const c = compCalc(v);
+    if (!c) { cmInp.value = ''; setVal(sh.id, f.ck, ''); setLit(null); return; }
+    const alt = Math.round(c.hFalta * 10) / 10;
+    cmInp.value = alt ? fmt1(alt) : '0'; setVal(sh.id, f.ck, cmInp.value);
+    setLit(litrosDeCm(alt));
   };
-  const vin = numCtl({ value: val(sh.id, f.vk), unit: '%', max: 100, label: f.l + ': nivel del visor en %', onChange: v => { setVal(sh.id, f.vk, v); paint(); } });
-  vin.classList.add('wide'); lit.classList.add('wide');
-  const box = (t, c) => h('label', { style: 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px' }, h('span', { style: 'font-size:13px;color:var(--ink2)' }, t), c);
+  const paint = () => {
+    res.textContent = '';
+    const p = toNum(val(sh.id, f.vk)), c = compCalc(val(sh.id, f.vk)), a = toNum(val(sh.id, f.ck));
+    if (c) res.append(h('div', null, 'Visor ' + fmt1(p) + ' %: hay ', h('b', null, fmt1(c.hNow) + ' cm · ' + fmt1(c.vNow) + ' L'), ' de ' + fmt1(COMP.VTOT) + ' L'));
+    if (a !== null) res.append(h('div', null, 'Para completar: ', h('b', { style: 'color:var(--warn)' }, fmt1(a) + ' cm · ' + fmt1(litrosDeCm(a)) + ' L'), ' → va al reporte'));
+    if (!c && a === null) res.append(h('span', { style: 'color:var(--ink2)' }, 'Poné el % del visor y la app calcula los cm y los litros.'));
+  };
+  const vin = numCtl({ value: val(sh.id, f.vk), unit: '%', max: 100, label: f.l + ': nivel del visor en %', onChange: v => { setVal(sh.id, f.vk, v); desdeVisor(v); paint(); } });
+  vin.classList.add('wide'); lit.classList.add('wide'); cm.classList.add('wide');
+  const box = (t, c, strong) => h('label', { style: 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px' }, h('span', { style: 'font-size:13px;color:var(--' + (strong ? 'accent2);font-weight:600' : 'ink2)') }, t), c);
   paint();
   return h('div', { class: 'row col' }, h('span', { class: 'lab', style: 'font-weight:600' }, f.l),
-    h('div', { style: 'display:flex;gap:10px' }, box('Nivel del visor', vin), box('Carga realizada', lit)), res);
+    h('div', { style: 'display:flex;gap:8px' }, box('Visor %', vin, true), box('Altura cm', cm), box('Litros', lit)), res);
 }
+
+
 function cisternaEl(sh, f) {
   const res = h('div', { style: 'margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--rule);font-size:15px;line-height:1.4' });
   const sumaEquipos = () => {
@@ -2455,7 +2468,7 @@ function alturaDeLitros(L) {
   if (lit === null || lit <= 0) return null;
   let lo = 0, hi = 100;
   for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2, c = compCalc(mid); if (c.vNow < lit) lo = mid; else hi = mid; }
-  return Math.round(COMP.D * hi / 100);
+  return Math.round(COMP.D * hi / 100 * 2) / 2;
 }
 const ACEITE_EQ = [['1  Pamco', 'mc1'], ['2  Pamco', 'mc2'], ['3  Pamco', 'mc3'], ['5  Pamco', 'mc5'], ['6  Pamco', 'mc6'], ['4  RC', 'rc4'], ['7  RC', 'rc7'], ['8  RC', 'rc8']];
 function hojaAceite(wb, lect, nombre, diaFijo) {
@@ -2713,10 +2726,10 @@ function hojaAceiteDia(wb, nombre, dia, arr) {
   const nb = { border: false, align: { horizontal: 'left', vertical: 'middle' } };
   xcell(ws, 3, C + 1, 'Aceite ', Object.assign({}, nb, { font: { bold: true, size: 12, color: { argb: 'FFC00000' } } }));
   xcell(ws, 3, C + 2, 'Calibración', Object.assign({}, nb, { align: { horizontal: 'right', vertical: 'middle' } }));
-  xcell(ws, 3, C + 3, 209, Object.assign({}, nb, { align: { horizontal: 'center', vertical: 'middle' }, numFmt: '0' }));
+  xcell(ws, 3, C + 3, Math.round(COMP.VTOT * 10) / 10, Object.assign({}, nb, { align: { horizontal: 'center', vertical: 'middle' }, numFmt: '0.0' }));
   xcell(ws, 3, C + 4, 'Litros', nb);
-  xcell(ws, 4, C + 1, 'Diámetro', nb); xcell(ws, 4, C + 2, 560, Object.assign({}, nb, { align: { horizontal: 'center' } })); xcell(ws, 4, C + 3, 'mm', nb);
-  xcell(ws, 5, C + 1, 'Longitud', nb); xcell(ws, 5, C + 2, 850, Object.assign({}, nb, { align: { horizontal: 'center' } })); xcell(ws, 5, C + 3, 'mm', nb);
+  xcell(ws, 4, C + 1, 'Diámetro', nb); xcell(ws, 4, C + 2, Math.round(COMP.D * 10), Object.assign({}, nb, { align: { horizontal: 'center' } })); xcell(ws, 4, C + 3, 'mm', nb);
+  xcell(ws, 5, C + 1, 'Longitud', nb); xcell(ws, 5, C + 2, Math.round(COMP.LI * 10), Object.assign({}, nb, { align: { horizontal: 'center' } })); xcell(ws, 5, C + 3, 'mm', nb);
   xmerge(ws, 7, C + 2, 7, C + 5, 'FECHA', { font: { bold: true, size: 10 }, border: false });
   xmerge(ws, 9, C + 2, 9, C + 3, fDate(dia), { numFmt: 'd/mm/yyyy', font: { bold: true, size: 12 }, fill: TEAL, border: 'medium' });
   xmerge(ws, 9, C + 4, 9, C + 5, 'CARGA EXTRA', { font: { bold: true, size: 9 }, fill: TEAL, border: 'medium' });
@@ -2729,13 +2742,14 @@ function hojaAceiteDia(wb, nombre, dia, arr) {
   xcell(ws, 10, C + 6, 'Total', { font: { size: 11 }, fill: 'FFFFFF00', border: 'medium' }); xcell(ws, 11, C + 6, 'Carga', { font: { size: 11 }, fill: 'FFFFFF00', border: 'medium' });
   const LY = ws.getColumn(C + 3).letter, LA = ws.getColumn(C + 5).letter, LT = ws.getColumn(C + 6).letter;
   let r = 12, total = 0;
+  const altDe = (list, key, litros) => { const cs = list.map(x => toNum(x.v[key + '_cm'])).filter(n => n !== null); return list.length === 1 && cs.length === 1 ? cs[0] : alturaDeLitros(litros); };
   const fila = (key, label2) => {
     const a = lts(main, key), b = lts(extra, key);
     total += (a || 0) + (b || 0);
     xcell(ws, r, C + 1, label2, { font: { bold: true, size: 11 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle' } });
-    xs(ws, r, C + 2, alturaDeLitros(a), { font: { bold: true, size: 12, color: { argb: 'FF1F4FD8' } }, border: 'medium' });
+    xs(ws, r, C + 2, a === null ? null : altDe(main, key, a), { font: { bold: true, size: 12, color: { argb: 'FF1F4FD8' } }, border: 'medium', numFmt: '0.0' });
     xs(ws, r, C + 3, a === null ? 0 : a, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
-    xs(ws, r, C + 4, alturaDeLitros(b), { font: { bold: true, size: 12, color: { argb: 'FF1F4FD8' } }, border: 'medium' });
+    xs(ws, r, C + 4, b === null ? null : altDe(extra, key, b), { font: { bold: true, size: 12, color: { argb: 'FF1F4FD8' } }, border: 'medium', numFmt: '0.0' });
     xs(ws, r, C + 5, b === null ? 0 : b, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
     xs(ws, r, C + 6, { formula: '+' + LY + r + '+' + LA + r, result: Math.round(((a || 0) + (b || 0)) * 10) / 10 }, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
     r++;
@@ -2777,6 +2791,27 @@ function hojaAceiteDia(wb, nombre, dia, arr) {
   if (ops.length) xmerge(ws, rc + 6, C, rc + 6, C + 6, 'Cargado por: ' + ops.join(', ') + (arr.length > 1 ? ' (' + arr.length + ' cargas en el día)' : ''), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
 }
 
+// Tabla de cubicación del depósito de carga (cilindro horizontal), cada 0,5 cm
+function hojaCubicacion(wb) {
+  const ws = wb.addWorksheet('Cubicación', { views: [{ state: 'frozen', ySplit: 9, showGridLines: false }] });
+  [30, 12, 4, 22, 22, 14].forEach((w, i) => ws.getColumn(1 + i).width = w);
+  xmerge(ws, 1, 1, 1, 6, 'Cubicación de Depósito Metálico Cilíndrico Horizontal', { font: { bold: true, size: 13 }, border: false, align: { horizontal: 'left' } });
+  xmerge(ws, 2, 1, 2, 6, 'Volumen parcial de aceite cada 0,5 cm de altura de líquido', { font: { size: 10, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+  const dat = [['Diámetro (cm)', COMP.D], ['Radio (cm)', COMP.R], ['Longitud (cm)', COMP.LI]];
+  dat.forEach(([l, v], i) => { xcell(ws, 3 + i, 1, l, { align: { horizontal: 'left', vertical: 'middle' } }); xs(ws, 3 + i, 2, v, { numFmt: '0.00', font: { bold: true } }); });
+  xcell(ws, 3, 4, 'Volumen total (100 %)', { font: { bold: true }, fill: TEAL }); xs(ws, 3, 5, Math.round(COMP.VTOT * 10) / 10, { numFmt: '0.0" L"', font: { bold: true, size: 12 } });
+  xs(ws, 9, 4, 'Altura de líquido h (cm)', { font: { bold: true }, fill: TEAL, border: 'medium' });
+  xs(ws, 9, 5, 'Volumen parcial (Litros)', { font: { bold: true }, fill: 'FFFFFF00', border: 'medium' });
+  xs(ws, 9, 6, '% Llenado', { font: { bold: true }, fill: TEAL, border: 'medium' });
+  let r = 10;
+  for (let h = 0; h <= COMP.D + 1e-9; h += 0.5) {
+    const c = compCalc(h / COMP.D * 100);
+    xs(ws, r, 4, h, { numFmt: '0.0' }); xs(ws, r, 5, Math.round(c.vNow * 100) / 100, { numFmt: '0.00' }); xs(ws, r, 6, c.vNow / COMP.VTOT, { numFmt: '0.0%' });
+    r++;
+  }
+  xs(ws, r, 4, Math.round(COMP.D * 10) / 10, { numFmt: '0.0', font: { bold: true } }); xs(ws, r, 5, Math.round(COMP.VTOT * 100) / 100, { numFmt: '0.00', font: { bold: true } }); xs(ws, r, 6, 1, { numFmt: '0.0%', font: { bold: true } });
+  xmerge(ws, r + 2, 4, r + 2, 6, 'Misma cuenta que la planilla de carga de aceite (Ø 560 mm × 850 mm).', { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left', wrapText: true } });
+}
 /* ---- armado y descarga ---- */
 const XL_SECC = [
   { id: 'rec', label: 'Recompresores', ids: ['rc4', 'rc7', 'rc8', 'rc9'] },
@@ -2804,6 +2839,7 @@ async function bajarExcel(sec) {
       else if (sec.id === 'tanques') hojaTanques(wb, nom, delDia, dia);
       else if (sec.id === 'aceite') hojaAceiteDia(wb, nom, dia, delDia);
     }
+    if (sec.id === 'aceite') hojaCubicacion(wb);
     // abrir en el día de hoy (o el último con lecturas)
     const hoy = new Date(), conDatos = [...new Set(lect.map(x => +x.fecha.slice(8, 10)))];
     const activo = (hoy.getFullYear() === yy && hoy.getMonth() + 1 === mm) ? hoy.getDate() : (conDatos.length ? Math.max(...conDatos) : 1);
