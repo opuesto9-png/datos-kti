@@ -1459,7 +1459,6 @@ function buildDrawer() {
   const quick = h('div', { class: 'nd-quick' },
     quickBtn('plus', 'Nuevo informe', () => { closeMenu(); nuevo(); }),
     quickBtn('clock', 'Historial', () => menuGo({ name: 'hist' })));
-  if (!esMovil()) quick.append(quickBtn('doc', 'Informe PDF', () => { closeMenu(); generar(); }));
   if (PRINCIPAL) {
     const rb = quickBtn('inbox', 'Recibidos', () => menuGo({ name: 'recibidos' }));
     const n = nNuevos();
@@ -1983,19 +1982,17 @@ function firmaDe(sh) {
   return (x >>> 0).toString(36) + ':' + s.length;
 }
 function destNodes(sh) {
-  const ruta = DRIVE_ROOT + ' / ' + sh.carpeta, g = S.guardadas && S.guardadas[sh.id];
+  const g = S.guardadas && S.guardadas[sh.id];
   if (g) {
     const igual = g.firma === firmaDe(sh);
-    const out = ['Guardada ' + fmtHora(g.fecha) + (g.donde === 'drive' ? ' en ' + ruta + '.' : g.donde === 'central' ? ' y enviada a la compu principal.' : ' y bajada como PDF.')];
-    if (g.donde === 'central' && igual && !esMovil()) out.push(' ', h('button', { class: 'link', type: 'button', onclick: () => bajarAca(sh) }, 'Bajar el PDF acá'), ' ·');
+    const out = ['Guardada ' + fmtHora(g.fecha) + '.'];
     if (igual) out.push(' ', h('button', { class: 'link', type: 'button', onclick: () => clearSheet(sh, true) }, 'Dejar en blanco para la próxima lectura'));
     else out.push(' Tenés cambios sin guardar.');
     return out;
   }
-  if (MCP_ST === 'no' && esMovil()) return [FB_OK ? 'Se envía a la compu principal, con la fecha y la hora.' : 'Sin conexión con la compu principal: abrí la app una vez con señal.'];
-  if (MCP_ST === 'no') return ['Se baja el PDF en esta compu' + (FB_OK && !PRINCIPAL ? ' y se envía a la compu principal.' : '.')];
-  return ['Se guarda en Drive, en ' + ruta + ', con la fecha y la hora como nombre.'];
+  return [FB_OK ? 'Se guarda con la fecha y la hora, y queda para las planillas Excel.' : 'Sin conexión: abrí la app una vez con señal.'];
 }
+
 function paintDest() {
   if (!S) return;
   const id = view.name === 'sheet' ? view.id : view.name === 'home' ? OPEN : null;
@@ -2090,52 +2087,19 @@ function driveTitle(sh, ahora, conSeg) {
 async function guardarPlanilla(sh) {
   if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
   if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
+  if (!FB_OK) return toast('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
   const ahora = stampOf(new Date());
   const prev = S.guardadas && S.guardadas[sh.id];
   const title = driveTitle(sh, ahora, !!prev && prev.titulo === driveTitle(sh, ahora, false));
-  busy(true, 'Armando el PDF…');
-  let blob = null;
-  try { blob = await buildPdf(S, { sheets: [sh], fecha: ahora.fecha }); } catch (e) { console.error(e); }
-  busy(false);
-  if (!blob) return toast('No se pudo armar el PDF.');
-  if (MCP_ST === 'checking') { busy(true, 'Conectando…'); await MCPP; busy(false); }
-  const firma = firmaDe(sh);
-  const listo = donde => {
-    (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde, firma, titulo: title };
-    if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now() }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
-    touch();
-  };
-  const env = FB_OK ? enviarCentral('planilla', stateDe(sh), { sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }) : null;
-  if (env && PRINCIPAL) marcarBajado([env]);
-  if (esMovil() && !MCP) {
-    if (!env) return toast('Sin conexión con la compu principal. Abrí la app una vez con señal y probá de nuevo.');
-    listo('central');
-    toast(navigator.onLine === false ? 'Sin señal: la planilla sale sola a la compu principal cuando vuelva la señal.' : 'Planilla enviada a la compu principal.');
-    return;
-  }
-  if (MCP) {
-    for (;;) {
-      busy(true, 'Guardando en Drive…');
-      let id = null, err = null;
-      try { id = await driveUpload(sh, blob, title); } catch (e) { err = e; }
-      if (err && ambiguo(err.code)) { id = await driveConfirm(sh, title); if (id) err = null; }
-      busy(false);
-      if (id) { listo('drive'); toast('Guardada en ' + DRIVE_ROOT + ' / ' + sh.carpeta + '.'); return; }
-      console.error(err);
-      const m = driveMsg(err);
-      const b = [{ id: 'no', label: 'Cancelar' }, { id: 'dl', label: 'Bajar el PDF al celular' }];
-      if (!sinReintento(err && err.code)) b.push({ id: 're', label: 'Reintentar', kind: 'primary' });
-      const r = await ask(m[0], m[1], b, { stack: true });
-      if (r === 're') continue;
-      if (r === 'dl') break;
-      return;
-    }
-  }
-  const res = await saveFile(blob, sh.carpeta + ' ' + title);
-  if (res === 'saved') { listo('celular'); toast('Se bajó el PDF de ' + sh.title + '.'); }
-  else if (res === 'declined') toast('No se guardó el archivo.');
-  else toast('No se pudo guardar el archivo.');
+  const env = enviarCentral('planilla', stateDe(sh), { sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha });
+  if (!env) return toast('No se pudo guardar. Probá de nuevo.');
+  if (PRINCIPAL) marcarBajado([env]);
+  (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', firma: firmaDe(sh), titulo: title };
+  if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now() }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
+  touch();
+  toast(navigator.onLine === false ? 'Sin señal: ' + sh.title + ' se guarda sola cuando vuelva la señal.' : sh.title + ' guardada.');
 }
+
 
 /* ---------- Compu principal: los celulares envían planillas e informes por Firebase (mismo proyecto que Pozos) ---------- */
 const FB_CONFIG = { apiKey: 'AIzaSyBYgPZ48U1Oei6FtWmaruXgfmvgyKRHBJs', authDomain: 'pozos-centenario.firebaseapp.com', projectId: 'pozos-centenario', storageBucket: 'pozos-centenario.firebasestorage.app', messagingSenderId: '1016276574997', appId: '1:1016276574997:web:a5769cb155c9647888ff1c' };
@@ -2222,7 +2186,7 @@ function iniciarRecibidos() {
 function pararRecibidos() { if (recibUnsub) { recibUnsub(); recibUnsub = null; } RECIB = []; recibListo = false; }
 async function togglePrincipal() {
   if (!PRINCIPAL) {
-    const r = await ask('¿Marcar esta compu como principal?', 'Va a recibir las planillas e informes que guarden los celulares, para bajarlos acá en PDF. Queda marcada solo en este navegador.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Marcar', kind: 'primary' }]);
+    const r = await ask('¿Marcar esta compu como principal?', 'Va a recibir el aviso de cada planilla que guarden los celulares. Queda marcada solo en este navegador.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Marcar', kind: 'primary' }]);
     if (r !== 'si') return;
     PRINCIPAL = true; lsSet('kti_principal', '1');
     // lo que ya había antes de marcarla no cuenta como nuevo
@@ -2301,14 +2265,14 @@ function recibView() {
   if (!RECIB.length) return [h('div', { class: 'empty' }, h('h2', null, 'Todavía no llegó nada'), h('p', null, 'Cuando un operador guarde una planilla o genere un informe en el celular, aparece acá.'))];
   const nuevos = RECIB.filter(r => !BAJADOS.has(r.id));
   const head = h('div', { class: 'rhead' },
-    h('p', null, nuevos.length ? nuevos.length + (nuevos.length === 1 ? ' envío nuevo sin bajar en esta compu.' : ' envíos nuevos sin bajar en esta compu.') : 'Todo lo recibido ya está bajado en esta compu.'),
-    nuevos.length ? h('button', { class: 'btn primary wide', type: 'button', onclick: () => bajarVarios(nuevos) }, nuevos.length === 1 ? 'Bajar el nuevo' : 'Bajar los ' + nuevos.length + ' nuevos (.zip)') : null);
+    h('p', null, nuevos.length ? nuevos.length + (nuevos.length === 1 ? ' envío nuevo sin ver en esta compu.' : ' envíos nuevos sin ver en esta compu.') : 'Todo lo recibido ya está visto. Los datos se bajan con los botones de Excel del inicio.'),
+    nuevos.length ? h('button', { class: 'btn primary wide', type: 'button', onclick: () => marcarBajado(nuevos.map(r => r.id)) }, 'Marcar todo como visto') : null);
   return [head, ...RECIB.map(r => {
     const nuevo = !BAJADOS.has(r.id);
     return h('article', { class: 'hcard' + (nuevo ? ' nuevo' : '') },
       h('div', { class: 'hh' }, h('b', null, tituloEnvio(r), nuevo ? h('span', { class: 'tag' }, 'NUEVO') : null), h('span', null, fmtFecha(r.fechaPdf || r.fecha))),
       h('p', null, (r.operador || 'Sin nombre') + (r.legajo ? ', legajo ' + r.legajo : '') + (r.nFotos ? ' · ' + r.nFotos + (r.nFotos === 1 ? ' foto' : ' fotos') : '')),
-      h('div', { class: 'hact' }, h('button', { class: 'btn' + (nuevo ? ' primary' : ''), type: 'button', onclick: () => bajarUno(r) }, nuevo ? 'Bajar PDF' : 'Bajar de nuevo')));
+      nuevo ? h('div', { class: 'hact' }, h('button', { class: 'btn', type: 'button', onclick: () => marcarBajado([r.id]) }, 'Marcar como visto')) : null);
   })];
 }
 // En el celular: bajar también el PDF de una planilla ya enviada
@@ -2700,7 +2664,7 @@ function hojaAceiteDia(wb, nombre, dia, arr) {
   const C = 2; // V..AB de la planilla original => B..H
   [2, 11.43, 13, 11.43, 9, 11.43, 9, 8.71].forEach((w, i) => ws.getColumn(1 + i).width = w);
   const hts = { 1: 7.5, 2: 6.75, 3: 15.75, 6: 0.75, 8: 2.25, 9: 20.25, 10: 15, 11: 15.75, 28: 18, 31: 16.5, 32: 18 };
-  for (let r = 1; r <= 32; r++) ws.getRow(r).height = hts[r] || 15.75;
+  for (let r = 1; r <= 28; r++) ws.getRow(r).height = hts[r] || 15.75;
   const lts = (list, k) => { let t = 0, hay = false; list.forEach(x => { const n = toNum(x.v[k]); if (n !== null) { t += n; hay = true; } }); return hay ? Math.round(t * 10) / 10 : null; };
   const main = arr.slice(0, 1), extra = arr.slice(1);
   const nb = { border: false, align: { horizontal: 'left', vertical: 'middle' } };
@@ -2738,15 +2702,36 @@ function hojaAceiteDia(wb, nombre, dia, arr) {
     fila(id + '_comp', 'COMPRESOR'); fila(id + '_mot', 'MOTOR');
   }
   xcell(ws, r, C, '9 RC', { font: { bold: true, size: 12 }, border: 'medium' }); fila('rc9', 'Comp- Motor');
-  for (const nm of ['BOOSTER K-101', 'K-401A', 'K-401B']) {
-    xmerge(ws, r, C, r, C + 1, nm, { font: { bold: true, size: 12 }, fill: TEAL, border: 'medium' });
-    for (let c = C + 2; c <= C + 6; c++) xs(ws, r, c, nm === 'BOOSTER K-101' && (c === C + 3 || c === C + 5) ? 0 : null, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '0' });
-    r++;
-  }
-  xmerge(ws, 32, C + 4, 32, C + 5, ' Carga Total', { font: { bold: true, size: 11 }, border: 'medium' });
-  xs(ws, 32, C + 6, { formula: 'SUM(' + LT + '12:' + LT + '31)', result: Math.round(total * 10) / 10 }, { font: { bold: true, size: 11 }, border: 'medium', numFmt: '0' });
+  const rt = r; // fila de Carga Total
+  ws.getRow(rt).height = 18;
+  xmerge(ws, rt, C + 4, rt, C + 5, ' Carga Total', { font: { bold: true, size: 11 }, border: 'medium' });
+  xs(ws, rt, C + 6, { formula: 'SUM(' + LT + '12:' + LT + (rt - 1) + ')', result: Math.round(total * 10) / 10 }, { font: { bold: true, size: 11 }, border: 'medium', numFmt: '0' });
+  // Cisterna general de aceite: medida inicial (primera carga del día) y final (última)
+  const conCist = arr.filter(x => x.v.cist_i || x.v.cist_f);
+  const ini = conCist.length ? toNum(conCist[0].v.cist_i) : null, fin = conCist.length ? toNum(conCist[conCist.length - 1].v.cist_f) : null;
+  const li = ini === null ? null : cistLitros(ini), lf = fin === null ? null : cistLitros(fin);
+  const rc = rt + 2;
+  [20.25, 15.75, 15.75, 15.75].forEach((hh, i) => ws.getRow(rc + i).height = hh);
+  xmerge(ws, rc, C, rc, C + 6, 'CISTERNA GENERAL DE ACEITE', { font: { bold: true, size: 11 }, fill: TEAL, border: 'medium' });
+  const hc = { font: { bold: true, size: 9 }, fill: TEAL, border: 'medium' };
+  xmerge(ws, rc + 1, C, rc + 1, C + 1, null, { border: 'medium' });
+  xmerge(ws, rc + 1, C + 2, rc + 1, C + 3, 'Medida (cm)', hc);
+  xmerge(ws, rc + 1, C + 4, rc + 1, C + 5, 'Litros', { font: { bold: true, size: 10 }, fill: 'FFFFFF00', border: 'medium' });
+  xs(ws, rc + 1, C + 6, '% llenado', hc);
+  const filaC = (rr, lab, cm, lit) => {
+    xmerge(ws, rr, C, rr, C + 1, lab, { font: { bold: true, size: 11 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle', indent: 1 } });
+    xmerge(ws, rr, C + 2, rr, C + 3, cm, { font: { bold: true, size: 12, color: { argb: 'FF1F4FD8' } }, border: 'medium', numFmt: '0.#' });
+    xmerge(ws, rr, C + 4, rr, C + 5, lit === null ? null : Math.round(lit), { font: { bold: true, size: 12 }, border: 'medium', numFmt: '#,##0' });
+    xs(ws, rr, C + 6, lit === null ? null : lit / CIST.VTOT, { font: { size: 11 }, border: 'medium', numFmt: '0%' });
+  };
+  filaC(rc + 2, 'Medida inicial', ini, li);
+  filaC(rc + 3, 'Medida final (queda)', fin, lf);
+  ws.getRow(rc + 4).height = 18;
+  xmerge(ws, rc + 4, C, rc + 4, C + 3, 'Sacado de la cisterna', { font: { bold: true, size: 11 }, border: 'medium', align: { horizontal: 'right', vertical: 'middle' } });
+  xmerge(ws, rc + 4, C + 4, rc + 4, C + 5, li !== null && lf !== null ? Math.round(Math.max(0, li - lf)) : null, { font: { bold: true, size: 12 }, border: 'medium', numFmt: '#,##0" L"' });
+  xs(ws, rc + 4, C + 6, null, { border: 'medium' });
   const ops = [...new Set(arr.map(x => x.operador).filter(Boolean))];
-  if (ops.length) xmerge(ws, 34, C, 34, C + 6, 'Cargado por: ' + ops.join(', ') + (arr.length > 1 ? ' (' + arr.length + ' cargas en el día)' : ''), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+  if (ops.length) xmerge(ws, rc + 6, C, rc + 6, C + 6, 'Cargado por: ' + ops.join(', ') + (arr.length > 1 ? ' (' + arr.length + ' cargas en el día)' : ''), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
 }
 
 /* ---- armado y descarga ---- */
@@ -2839,7 +2824,6 @@ function histView() {
     h('p', null, summaryText(r.resumen)),
     h('div', { class: 'hact' },
       h('button', { class: 'btn', type: 'button', onclick: () => abrirHist(r) }, 'Abrir'),
-      esMovil() ? null : h('button', { class: 'btn', type: 'button', onclick: () => pdfHist(r) }, 'PDF'),
       h('button', { class: 'btn', type: 'button', onclick: () => borrarHist(r) }, 'Eliminar'))));
 }
 async function abrirHist(r) {
