@@ -121,6 +121,25 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .hturno .ht2 { font: 600 16.5px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hturno .ht2.falta { color: var(--warn); }
 .hturno .chev { flex: none; font-size: 24px; color: var(--ink2); }
+.xlpanel { margin: 0 0 18px; padding: 18px; background: var(--sheet); border: 1px solid var(--rule); border-top: 4px solid var(--accent2); border-radius: 12px; }
+.xlph { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.xlph h2 { margin: 0; font: 700 26px var(--head); }
+.xlph p { margin: 4px 0 0; color: var(--ink2); font-size: 15px; }
+.xlmesw { display: flex; flex-direction: column; gap: 4px; font: 600 12px var(--body); text-transform: uppercase; letter-spacing: .4px; color: var(--ink2); }
+.xlgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.xltile { position: relative; display: flex; align-items: center; gap: 14px; min-height: 96px; padding: 14px 16px; border: 1.5px solid var(--rule); border-radius: 12px; background: var(--field); color: var(--ink); text-align: left; transition: transform .12s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.xltile:active { transform: scale(.97); }
+.xltile.hay { border-color: var(--accent2); }
+.xlic { flex: none; width: 46px; height: 46px; padding: 10px; border-radius: 10px; background: var(--dim); color: var(--accent2); }
+.xlic svg { display: block; width: 100%; height: 100%; }
+.xltx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.xltx b { font: 700 20px var(--head); }
+.xlsub { font-size: 13px; color: var(--ink2); line-height: 1.3; }
+.xlult { font-size: 12.5px; color: var(--accent2); }
+.xlgo { flex: none; width: 40px; height: 40px; border-radius: 10px; background: var(--primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4v11M7 10l5 5 5-5M5 20h14'/%3E%3C/svg%3E") center / 22px no-repeat; }
+body.pcx main, body.pcx #topbar .wrap { max-width: 1040px; }
+.nd-pcinfo { margin: 16px; color: var(--ink2); font-size: 14.5px; line-height: 1.45; }
+@media (hover: hover) { .xltile:hover { border-color: var(--primary); background: var(--dim); box-shadow: 0 0 0 3px rgba(28,114,147,.25); } }
 .xlcard { margin: 0 0 14px; padding: 12px 14px 14px; background: var(--sheet); border: 1px solid var(--rule); border-left: 6px solid var(--accent2); border-radius: 10px; }
 .xlh { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .xlh h2 { margin: 0; font: 700 20px var(--head); }
@@ -1454,18 +1473,19 @@ function buildDrawer() {
     h('div', { class: 'row1' }, mark, h('div', { class: 'word' }, h('span', { class: 't1' }, 'Datos KTI'), h('span', { class: 't2' }, 'Navegador de equipos')), closeBtn));
   const opSet = S.operador && S.operador.trim();
   const opLabel = opSet ? h('span', null, 'Turno actual: ', h('b', null, S.operador.trim())) : h('span', null, 'Configurar datos del turno');
-  head.append(h('button', { class: 'nd-op', type: 'button', onclick: () => menuGo({ name: 'turno' }) },
+  const pc = !esMovil();
+  if (!pc) head.append(h('button', { class: 'nd-op', type: 'button', onclick: () => menuGo({ name: 'turno' }) },
     opLabel, h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
   const quick = h('div', { class: 'nd-quick' },
-    quickBtn('plus', 'Nuevo informe', () => { closeMenu(); nuevo(); }),
-    quickBtn('clock', 'Historial', () => menuGo({ name: 'hist' })));
+    pc ? quickBtn('doc', 'Planillas Excel', () => menuGo({ name: 'home' })) : quickBtn('plus', 'Nuevo informe', () => { closeMenu(); nuevo(); }),
+    pc ? null : quickBtn('clock', 'Historial', () => menuGo({ name: 'hist' })));
   if (PRINCIPAL) {
     const rb = quickBtn('inbox', 'Recibidos', () => menuGo({ name: 'recibidos' }));
     const n = nNuevos();
     if (n) rb.querySelector('.qtx').append(h('span', { class: 'qbadge' }, n > 99 ? '99+' : String(n)));
     quick.append(rb);
   }
-  const body = h('div', { class: 'nd-body' }, GROUP_ORDER.map(groupBlock));
+  const body = h('div', { class: 'nd-body' }, pc ? h('p', { class: 'nd-pcinfo' }, 'En la compu solo se bajan las planillas en Excel. La carga de datos se hace desde los celulares.') : GROUP_ORDER.map(groupBlock));
   const foot = h('div', { class: 'nd-foot' },
     (FB_OK && (!esMovil() || PRINCIPAL)) ? h('button', { class: 'nd-prin' + (PRINCIPAL ? ' on' : ''), type: 'button', onclick: togglePrincipal }, PRINCIPAL ? '★ Compu principal (tocar para sacar)' : 'Marcar esta compu como principal') : null,
     'Datos KTI · Sistema interno de mantenimiento');
@@ -1533,7 +1553,9 @@ function homeView() {
     h('span', { class: 'htx' }, h('span', { class: 'ht1' }, opSet ? 'Turno actual' : 'Datos del turno'),
       h('span', { class: 'ht2' + (opSet ? '' : ' falta') }, opSet ? S.operador.trim() + (S.legajo && S.legajo.trim() ? ' · legajo ' + S.legajo.trim() : '') : 'Tocá para cargar operador y legajo')),
     h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
-  return [hero, turno, esMovil() ? null : excelCard(), ...GROUP_ORDER.map(accGroup)].filter(Boolean);
+  document.body.classList.toggle('pcx', !esMovil());
+  if (!esMovil()) return [hero, excelPanel()];
+  return [hero, turno, ...GROUP_ORDER.map(accGroup)];
 }
 function accGroup(g) {
   const items = SHEETS.filter(s => s.grp === g);
@@ -2772,6 +2794,34 @@ async function bajarExcel(sec) {
     toast('Se bajó el Excel de ' + sec.label + ': una hoja por día, ' + (lect.length ? lect.length + (lect.length === 1 ? ' lectura cargada.' : ' lecturas cargadas.') : 'todavía sin lecturas.'));
   } catch (e) { console.error(e); busy(false); toast('No se pudo armar el Excel: ' + (e.message || e)); }
 }
+const XL_INFO = { rec: ['gauge', 'RC#4 · RC#7 · RC#8 · RC#9'], turbo: ['bolt', 'Datos de seguimiento turboexpansor'], tanques: ['tank', 'Tanques LPG 1 al 7'], aceite: ['drop', 'Pamco · RC · Cisterna general'], mc: ['engine', 'MC#1 · MC#2 · MC#3 · MC#5 · MC#6'] };
+function xlUltima(sc) {
+  const ts = XL_ENV.filter(x => sc.ids.includes(x.sheetId)).reduce((m, x) => Math.max(m, x.ts), 0);
+  if (!ts) return 'Sin lecturas todavía';
+  const d = new Date(ts), hoy = new Date();
+  const dia = d.toDateString() === hoy.toDateString() ? 'hoy' : pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1);
+  return 'Última lectura: ' + dia + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function excelPanel() {
+  const opts = [];
+  const d = new Date();
+  for (let i = 0; i < 13; i++) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1), m = x.getFullYear() + '-' + pad2(x.getMonth() + 1); opts.push(h('option', { value: m }, MESES[x.getMonth()][0].toUpperCase() + MESES[x.getMonth()].slice(1) + ' ' + x.getFullYear())); }
+  const sel = h('select', { class: 'txt xlmes', 'aria-label': 'Mes', onchange: e => { XL_MES = e.target.value || XL_MES; } }, opts);
+  sel.value = XL_MES;
+  const tiles = XL_SECC.map(sc => {
+    const n = xlNuevos(sc), info = XL_INFO[sc.id] || ['doc', ''];
+    const ic = h('span', { class: 'xlic' }); ic.innerHTML = ICONS[info[0]] || ICONS.doc;
+    return h('button', { class: 'xltile' + (n ? ' hay' : ''), type: 'button', 'data-sec': sc.id, onclick: () => bajarExcel(sc) },
+      ic, h('span', { class: 'xltx' }, h('b', null, sc.label), h('span', { class: 'xlsub' }, info[1]), h('span', { class: 'xlult' }, xlUltima(sc))),
+      h('span', { class: 'xlgo', 'aria-hidden': 'true', title: 'Bajar Excel' }),
+      n ? h('span', { class: 'xlbadge', title: 'Lecturas nuevas sin bajar' }, n > 99 ? '99+' : String(n)) : null);
+  });
+  return h('section', { class: 'xlpanel' },
+    h('div', { class: 'xlph' },
+      h('div', null, h('h2', null, 'Planillas en Excel'), h('p', null, 'Elegí el mes y tocá una sección: baja el Excel con una solapa por día (01 al 31).')),
+      h('label', { class: 'xlmesw' }, h('span', null, 'Mes'), sel)),
+    h('div', { class: 'xlgrid' }, tiles));
+}
 function excelCard() {
   const opts = [];
   const d = new Date();
@@ -2792,10 +2842,11 @@ function xlMarcarVisto(sec) {
   pintarXL();
 }
 function pintarXL() {
-  document.querySelectorAll('.xlbtns .btn[data-sec]').forEach(b => {
+  document.querySelectorAll('.xlbtns .btn[data-sec], .xltile[data-sec]').forEach(b => {
     const sc = XL_SECC.find(x => x.id === b.dataset.sec);
     if (!sc) return;
     const n = xlNuevos(sc);
+    const ul = b.querySelector('.xlult'); if (ul) ul.textContent = xlUltima(sc);
     let bd = b.querySelector('.xlbadge');
     if (!n) { if (bd) bd.remove(); b.classList.remove('hay'); return; }
     if (!bd) { bd = h('span', { class: 'xlbadge', title: 'Lecturas nuevas sin bajar' }); b.append(bd); }
