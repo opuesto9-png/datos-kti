@@ -121,6 +121,9 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .hturno .ht2 { font: 600 16.5px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hturno .ht2.falta { color: var(--warn); }
 .hturno .chev { flex: none; font-size: 24px; color: var(--ink2); }
+.xlavisos { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding: 10px 14px; border: 1px dashed var(--rule); border-radius: 10px; color: var(--ink2); font-size: 14.5px; }
+.xlavisos.on { border-style: solid; border-color: var(--dim); }
+.xlavisos .btn.small { min-height: 40px; }
 .xlpanel { margin: 0 0 18px; padding: 18px; background: var(--sheet); border: 1px solid var(--rule); border-top: 4px solid var(--accent2); border-radius: 12px; }
 .xlph { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
 .xlph h2 { margin: 0; font: 700 26px var(--head); }
@@ -2878,7 +2881,7 @@ function excelPanel() {
     h('div', { class: 'xlph' },
       h('div', null, h('h2', null, 'Planillas en Excel'), h('p', null, 'Elegí el mes y tocá una sección: baja el Excel con una solapa por día (01 al 31).')),
       h('label', { class: 'xlmesw' }, h('span', null, 'Mes'), sel)),
-    h('div', { class: 'xlgrid' }, tiles));
+    h('div', { class: 'xlgrid' }, tiles), avisosEl());
 }
 function excelCard() {
   const opts = [];
@@ -2900,6 +2903,7 @@ function xlMarcarVisto(sec) {
   pintarXL();
 }
 function pintarXL() {
+  actualizarBadge();
   document.querySelectorAll('.xlbtns .btn[data-sec], .xltile[data-sec]').forEach(b => {
     const sc = XL_SECC.find(x => x.id === b.dataset.sec);
     if (!sc) return;
@@ -2913,13 +2917,77 @@ function pintarXL() {
     b.classList.add('hay');
   });
 }
+/* ---- Avisos en la compu: sonido, número en el ícono de la barra de tareas y aviso de Windows ---- */
+let AUDIO = null;
+const avisosOn = () => lsGet('kti_avisos', '1') === '1';
+function prepararAudio() {
+  try { AUDIO = AUDIO || new (window.AudioContext || window.webkitAudioContext)(); if (AUDIO.state === 'suspended') AUDIO.resume(); } catch (e) {}
+}
+// el navegador solo deja sonar después de un toque del usuario: se prepara con el primer clic
+document.addEventListener('pointerdown', prepararAudio, { once: true });
+function ding() {
+  if (!avisosOn()) return;
+  prepararAudio();
+  if (!AUDIO) return;
+  const t = AUDIO.currentTime;
+  [[880, 0], [1320, 0.16]].forEach(([fq, dt]) => {
+    const o = AUDIO.createOscillator(), g = AUDIO.createGain();
+    o.type = 'sine'; o.frequency.value = fq;
+    g.gain.setValueAtTime(0.0001, t + dt);
+    g.gain.exponentialRampToValueAtTime(0.35, t + dt + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.45);
+    o.connect(g); g.connect(AUDIO.destination); o.start(t + dt); o.stop(t + dt + 0.5);
+  });
+}
+function totalNuevas() { return XL_SECC.reduce((t, sc) => t + xlNuevos(sc), 0); }
+function actualizarBadge() {
+  if (esMovil()) return;
+  const n = totalNuevas();
+  try { if (navigator.setAppBadge) { if (n) navigator.setAppBadge(n); else navigator.clearAppBadge(); } } catch (e) {}
+  document.title = (n ? '(' + n + ') ' : '') + 'Datos KTI';
+}
+async function avisarNuevas(nuevas) {
+  ding();
+  const porSec = XL_SECC.map(sc => [sc, nuevas.filter(x => sc.ids.includes(x.sheetId))]).filter(([, l]) => l.length);
+  const ops = [...new Set(nuevas.map(x => x.operador).filter(Boolean))];
+  const texto = porSec.map(([sc, l]) => sc.label + (l.length > 1 ? ' (' + l.length + ')' : '')).join(', ') + (ops.length ? ' · ' + ops.join(', ') : '');
+  toast('Llegó: ' + texto);
+  if (!avisosOn() || !document.hidden || !('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    const opts = { body: texto, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'kti-nuevas', renotify: true };
+    if (reg) reg.showNotification('Datos KTI: lecturas nuevas', opts); else new Notification('Datos KTI: lecturas nuevas', opts);
+  } catch (e) {}
+}
+async function activarAvisos() {
+  prepararAudio();
+  lsSet('kti_avisos', '1');
+  if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) {} }
+  ding();
+  render(true);
+  toast(('Notification' in window && Notification.permission === 'granted') ? 'Avisos activados: sonido, número en el ícono y aviso de Windows.' : 'Sonido activado. Los avisos de Windows quedaron bloqueados en el navegador.');
+}
+function desactivarAvisos() { lsSet('kti_avisos', '0'); render(true); toast('Sonido y avisos desactivados.'); }
+function avisosEl() {
+  const perm = 'Notification' in window ? Notification.permission : 'denied';
+  const on = avisosOn();
+  if (on && perm === 'granted') return h('div', { class: 'xlavisos on' }, h('span', null, '🔔 Avisos activados: suena y marca el ícono cuando llega una lectura.'), h('button', { class: 'link', type: 'button', onclick: desactivarAvisos }, 'Silenciar'));
+  if (!on) return h('div', { class: 'xlavisos' }, h('span', null, '🔕 Avisos silenciados.'), h('button', { class: 'btn small', type: 'button', onclick: activarAvisos }, 'Activar avisos'));
+  return h('div', { class: 'xlavisos' }, h('span', null, '🔔 Activá los avisos para que suene y te aparezca el aviso de Windows aunque la app esté minimizada.'), h('button', { class: 'btn small primary', type: 'button', onclick: activarAvisos }, 'Activar avisos'));
+}
 function xlIniciar() {
   if (xlUnsub || !FB_OK || esMovil()) return;
   // la primera vez en esta compu arranca en cero (lo anterior no cuenta como nuevo)
   XL_SECC.forEach(sc => { if (!lsGet('kti_xl_visto_' + sc.id, '')) lsSet('kti_xl_visto_' + sc.id, String(Date.now())); });
+  let primera = true, antes = new Set();
   xlUnsub = FDB.collection(KTI_COL).orderBy('clientTs', 'desc').limit(400).onSnapshot(snap => {
     XL_ENV = [];
-    snap.forEach(d => { const r = d.data(); if (r.tipo === 'planilla') XL_ENV.push({ sheetId: r.sheetId, ts: r.clientTs || 0 }); });
+    snap.forEach(d => { const r = d.data(); if (r.tipo === 'planilla') XL_ENV.push({ id: d.id, sheetId: r.sheetId, ts: r.clientTs || 0, operador: r.operador || '' }); });
+    if (!primera) {
+      const nuevas = XL_ENV.filter(x => !antes.has(x.id) && XL_SECC.some(sc => sc.ids.includes(x.sheetId)));
+      if (nuevas.length) avisarNuevas(nuevas);
+    }
+    primera = false; antes = new Set(XL_ENV.map(x => x.id));
     pintarXL();
   }, e => console.error(e));
 }
