@@ -2139,16 +2139,24 @@ async function guardarPlanilla(sh) {
   if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
   if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
   if (!FB_OK) return toast('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
-  const ahora = stampOf(new Date());
   const prev = S.guardadas && S.guardadas[sh.id];
+  if (prev && prev.firma === firmaDe(sh)) return toast(sh.title + ' ya está guardada (' + fmtHora(prev.fecha) + '). Cambiá algún dato para guardar otra lectura.');
+  let corrige = null;
+  if (prev && prev.env) {
+    const r = await ask('¿Corrección o lectura nueva?', 'Ya guardaste ' + sh.title + ' a las ' + fmtHora(prev.fecha) + '. ¿Querés corregir esa lectura o guardar esta como una lectura nueva?',
+      [{ id: 'no', label: 'Cancelar' }, { id: 'nueva', label: 'Lectura nueva' }, { id: 'corr', label: 'Corregir la de las ' + fmtHora(prev.fecha), kind: 'primary' }], { stack: true });
+    if (r !== 'nueva' && r !== 'corr') return;
+    if (r === 'corr') corrige = prev.env;
+  }
+  const ahora = stampOf(new Date());
   const title = driveTitle(sh, ahora, !!prev && prev.titulo === driveTitle(sh, ahora, false));
-  const env = enviarCentral('planilla', stateDe(sh), { sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha });
+  const env = enviarCentral('planilla', stateDe(sh), Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}));
   if (!env) return toast('No se pudo guardar. Probá de nuevo.');
   if (PRINCIPAL) marcarBajado([env]);
-  (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', firma: firmaDe(sh), titulo: title };
+  (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', firma: firmaDe(sh), titulo: title, env };
   if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now() }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
   touch();
-  toast(navigator.onLine === false ? 'Sin señal: ' + sh.title + ' se guarda sola cuando vuelva la señal.' : sh.title + ' guardada.');
+  toast(navigator.onLine === false ? 'Sin señal: ' + sh.title + ' se guarda sola cuando vuelva la señal.' : sh.title + (corrige ? ' corregida.' : ' guardada.'));
 }
 
 
@@ -2364,23 +2372,28 @@ const fHora = f => { const m = /T(\d\d:\d\d)/.exec(f || ''); return m ? m[1] : '
 const MIN_CORRECCION = 10;
 async function lecturasDe(ids, mes) {
   const s = await FDB.collection(KTI_COL).where('tipo', '==', 'planilla').get();
-  const L = [];
+  const L = [], corregidas = new Set();
   s.forEach(d => {
     const r = d.data();
+    if (r.corrige) corregidas.add(r.corrige);
     if (!ids.includes(r.sheetId)) return;
     const f = r.fechaPdf || r.fecha || '';
     if (mes && f.slice(0, 7) !== mes) return;
     let st = null; try { st = JSON.parse(r.estado); } catch (e) { return; }
-    L.push({ sheetId: r.sheetId, fecha: f, ts: r.clientTs || 0, operador: r.operador || '', v: (st && st.v && st.v[r.sheetId]) || {} });
+    L.push({ id: d.id, sheetId: r.sheetId, fecha: f, ts: r.clientTs || 0, operador: r.operador || '', v: (st && st.v && st.v[r.sheetId]) || {} });
   });
   L.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.ts - b.ts));
   const out = [];
   for (const x of L) {
-    for (let i = out.length - 1; i >= 0; i--) if (out[i].sheetId === x.sheetId) { if (minDif(out[i].fecha, x.fecha) < MIN_CORRECCION) out.splice(i, 1); break; }
-    out.push(x);
+    if (corregidas.has(x.id)) continue; // fue reemplazada por una corrección
+    // mismo dato guardado dos veces seguidas (sin cambios) a los pocos minutos: queda uno solo
+    let dup = false;
+    for (let i = out.length - 1; i >= 0; i--) if (out[i].sheetId === x.sheetId) { if (minDif(out[i].fecha, x.fecha) < MIN_CORRECCION && JSON.stringify(out[i].v) === JSON.stringify(x.v)) { out.splice(i, 1); } break; }
+    if (!dup) out.push(x);
   }
   return out;
 }
+
 
 /* ---- estilos ---- */
 const XB = s => ({ top: { style: s }, left: { style: s }, bottom: { style: s }, right: { style: s } });
