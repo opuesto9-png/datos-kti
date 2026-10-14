@@ -706,8 +706,9 @@ const ABLAND_GROUPS = [
     num('h_blanda', 'Altura cisterna agua blanda', 'cm'),
     num('h_dura', 'Altura cisterna agua dura', 'cm'),
   ] },
-  { t: 'Control', f: [
-    num('dureza', 'Medición de dureza', 'mg/L'),
+  { t: 'Control de dureza', f: [
+    num('dureza_col', 'Dureza en columnas', 'mg/L'),
+    num('dureza_cist', 'Dureza en cisterna de agua blanda', 'mg/L'),
   ] },
 ];
 addSheet({ id: 'ablandador', carpeta: 'ABLANDADOR', grp: 'Ablandador', title: 'Ablandador', fluid: 'water', groups: ABLAND_GROUPS });
@@ -2848,7 +2849,7 @@ function hojaCubicacion(wb) {
 // Ablandador: una fila por lectura del día
 function hojaAblandadorDia(wb, nombre, dia, lect) {
   const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }] });
-  const cols = [['Hora', 9], ['Columna en servicio', 12], ['m³ faltantes (de ' + ABL_CAP + ')', 13], ['m³ procesados', 12], ['Agua blanda (cm)', 13], ['Agua dura (cm)', 13], ['Dureza (mg/L)', 12], ['Operador', 22]];
+  const cols = [['Hora', 9], ['Columna en servicio', 12], ['m³ faltantes (de ' + ABL_CAP + ')', 13], ['m³ procesados', 12], ['Agua blanda (cm)', 13], ['Agua dura (cm)', 13], ['Dureza columnas (mg/L)', 13], ['Dureza cisterna blanda (mg/L)', 14], ['Operador', 22]];
   cols.forEach(([, w], i) => ws.getColumn(2 + i).width = w); ws.getColumn(1).width = 2;
   const last = 1 + cols.length;
   ws.getRow(1).height = 34; ws.getRow(3).height = 20; ws.getRow(4).height = 34;
@@ -2857,7 +2858,7 @@ function hojaAblandadorDia(wb, nombre, dia, lect) {
   xmerge(ws, 3, 2, 3, 3, fDate(dia), { numFmt: 'dddd d/mm/yyyy', font: { bold: true, size: 11 }, border: 'medium' });
   xmerge(ws, 3, 4, 3, 5, 'Columnas', { font: { bold: true, size: 10 }, fill: 'FFDDEBF7', border: 'medium' });
   xmerge(ws, 3, 6, 3, 7, 'Cisternas', { font: { bold: true, size: 10 }, fill: 'FFDDEBF7', border: 'medium' });
-  xmerge(ws, 3, 8, 3, 9, 'Control', { font: { bold: true, size: 10 }, fill: 'FFDDEBF7', border: 'medium' });
+  xmerge(ws, 3, 8, 3, 9, 'Control de dureza', { font: { bold: true, size: 10 }, fill: 'FFDDEBF7', border: 'medium' });
   cols.forEach(([t], i) => xs(ws, 4, 2 + i, t, { font: { bold: true, size: 10 }, fill: 'FF9BE3E3', border: 'medium', align: { horizontal: 'center', vertical: 'middle', wrapText: true } }));
   const nf = Math.max(lect.length, 4);
   for (let i = 0; i < nf; i++) {
@@ -2870,8 +2871,9 @@ function hojaAblandadorDia(wb, nombre, dia, lect) {
     xs(ws, r, 5, falt === null ? null : { formula: ABL_CAP + '-' + ws.getColumn(4).letter + r, result: Math.round((ABL_CAP - falt) * 100) / 100 }, { numFmt: '0.0#' });
     xs(ws, r, 6, x ? xval(v.h_blanda) : null);
     xs(ws, r, 7, x ? xval(v.h_dura) : null);
-    xs(ws, r, 8, x ? xval(v.dureza) : null, { font: { bold: true } });
-    xs(ws, r, 9, x ? x.operador : null, { font: { size: 9 } });
+    xs(ws, r, 8, x ? xval(v.dureza_col || v.dureza) : null, { font: { bold: true } });
+    xs(ws, r, 9, x ? xval(v.dureza_cist) : null, { font: { bold: true } });
+    xs(ws, r, 10, x ? x.operador : null, { font: { size: 9 } });
   }
 }
 /* ---- armado y descarga ---- */
