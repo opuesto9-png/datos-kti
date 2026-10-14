@@ -121,6 +121,8 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .hturno .ht2 { font: 600 16.5px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hturno .ht2.falta { color: var(--warn); }
 .hturno .chev { flex: none; font-size: 24px; color: var(--ink2); }
+.nuevaver { position: fixed; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 10px 12px 10px 16px; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 600; box-shadow: 0 8px 28px rgba(0,0,0,.4); }
+.nuevaver .btn { background: #fff; color: var(--primary); border-color: #fff; min-height: 40px; }
 .xlavisos { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding: 10px 14px; border: 1px dashed var(--rule); border-radius: 10px; color: var(--ink2); font-size: 14.5px; }
 .xlavisos.on { border-style: solid; border-color: var(--dim); }
 .xlavisos .btn.small { min-height: 40px; }
@@ -1463,10 +1465,8 @@ function itemIndicator(sh) {
   }
   const pct = s.pct;
   const g = S.guardadas && S.guardadas[sh.id];
-  if (g) {
-    if (g.firma === firmaDe(sh)) return { html: ringSVG(100, 'done'), sub: 'Guardada ' + fmtHora(g.fecha), cls: 'ok' };
-    return { html: ringSVG(100, 'chg'), sub: 'Con cambios', cls: 'warn' };
-  }
+  if (g && g.corrigiendo) return { html: ringSVG(100, 'chg'), sub: 'Corrigiendo la de las ' + fmtHora(g.fecha), cls: 'warn' };
+  if (g && !s.n) return { html: ringSVG(100, 'done'), sub: 'Guardada ' + fmtHora(g.fecha) + ' · lista para la próxima', cls: 'ok' };
   if (!s.n) return { html: ringSVG(0, 'empty'), sub: 'Sin datos', cls: '' };
   return { html: ringSVG(pct, ''), sub: s.n + '/' + s.total + ' campos', cls: '' };
 }
@@ -2037,15 +2037,11 @@ function firmaDe(sh) {
 }
 function destNodes(sh) {
   const g = S.guardadas && S.guardadas[sh.id];
-  if (g) {
-    const igual = g.firma === firmaDe(sh);
-    const out = ['Guardada ' + fmtHora(g.fecha) + '.'];
-    if (igual) out.push(' ', h('button', { class: 'link', type: 'button', onclick: () => clearSheet(sh, true) }, 'Dejar en blanco para la próxima lectura'));
-    else out.push(' Tenés cambios sin guardar.');
-    return out;
-  }
+  if (g && g.corrigiendo) return ['Corrigiendo la lectura de las ' + fmtHora(g.fecha) + ': al guardar la reemplaza. ', h('button', { class: 'link', type: 'button', onclick: () => cancelarCorreccion(sh) }, 'Cancelar')];
+  if (g) return ['Última lectura guardada ' + fmtHora(g.fecha) + '. ', ULT[sh.id] ? h('button', { class: 'link', type: 'button', onclick: () => corregirUltima(sh) }, 'Corregir esa lectura') : null];
   return [FB_OK ? 'Se guarda con la fecha y la hora, y queda para las planillas Excel.' : 'Sin conexión: abrí la app una vez con señal.'];
 }
+
 
 function paintDest() {
   if (!S) return;
@@ -2143,24 +2139,32 @@ async function guardarPlanilla(sh) {
   if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
   if (!FB_OK) return toast('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
   const prev = S.guardadas && S.guardadas[sh.id];
-  if (prev && prev.firma === firmaDe(sh)) return toast(sh.title + ' ya está guardada (' + fmtHora(prev.fecha) + '). Cambiá algún dato para guardar otra lectura.');
-  let corrige = null;
-  if (prev && prev.env) {
-    const r = await ask('¿Corrección o lectura nueva?', 'Ya guardaste ' + sh.title + ' a las ' + fmtHora(prev.fecha) + '. ¿Querés corregir esa lectura o guardar esta como una lectura nueva?',
-      [{ id: 'no', label: 'Cancelar' }, { id: 'nueva', label: 'Lectura nueva' }, { id: 'corr', label: 'Corregir la de las ' + fmtHora(prev.fecha), kind: 'primary' }], { stack: true });
-    if (r !== 'nueva' && r !== 'corr') return;
-    if (r === 'corr') corrige = prev.env;
-  }
+  const corrige = prev && prev.corrigiendo && prev.env ? prev.env : null;
   const ahora = stampOf(new Date());
   const title = driveTitle(sh, ahora, !!prev && prev.titulo === driveTitle(sh, ahora, false));
   const env = enviarCentral('planilla', stateDe(sh), Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}));
   if (!env) return toast('No se pudo guardar. Probá de nuevo.');
   if (PRINCIPAL) marcarBajado([env]);
-  (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', firma: firmaDe(sh), titulo: title, env };
+  (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', titulo: title, env };
   if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now() }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
-  touch();
-  toast(navigator.onLine === false ? 'Sin señal: ' + sh.title + ' se guarda sola cuando vuelva la señal.' : sh.title + (corrige ? ' corregida.' : ' guardada.'));
+  // campos en blanco para la próxima toma (la lectura anterior queda en gris como referencia)
+  if (sh.kind === 'list') S[sh.id] = []; else delete S.v[sh.id];
+  if (sh.photos) S[sh.photos.key] = [];
+  touch(); render(true);
+  toast(navigator.onLine === false ? 'Sin señal: ' + sh.title + ' se guarda sola cuando vuelva la señal.' : sh.title + (corrige ? ' corregida.' : ' guardada. Campos listos para la próxima lectura.'));
 }
+function corregirUltima(sh) {
+  const g = S.guardadas && S.guardadas[sh.id], u = ULT[sh.id];
+  if (!g || !u) return toast('No encontré la última lectura de ' + sh.title + '.');
+  S.v[sh.id] = clone(u.v); g.corrigiendo = true;
+  touch(); render(true); toast('Corregí los datos y tocá Guardar: reemplaza la lectura de las ' + fmtHora(g.fecha) + '.');
+}
+function cancelarCorreccion(sh) {
+  const g = S.guardadas && S.guardadas[sh.id];
+  if (g) g.corrigiendo = false;
+  delete S.v[sh.id]; touch(); render(true);
+}
+
 
 
 /* ---------- Compu principal: los celulares envían planillas e informes por Firebase (mismo proyecto que Pozos) ---------- */
@@ -2180,6 +2184,21 @@ const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === 
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function esMovil() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
+// Aviso de versión nueva: compara esta versión con la publicada
+const APP_VER = '2026-10-14c';
+async function chequearVersion() {
+  try {
+    const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text();
+    const m = /const APP_VER = '([^']+)'/.exec(t);
+    if (m && m[1] !== APP_VER && !document.getElementById('nuevaVer')) {
+      document.body.append(h('div', { id: 'nuevaVer', class: 'nuevaver' }, h('span', null, 'Hay una versión nueva de la app.'),
+        h('button', { class: 'btn small primary', type: 'button', onclick: () => location.reload() }, 'Actualizar')));
+    }
+  } catch (e) {}
+}
+setTimeout(chequearVersion, 4000);
+setInterval(chequearVersion, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) chequearVersion(); });
 let BAJADOS = new Set();
 try { BAJADOS = new Set(JSON.parse(lsGet('kti_bajados', '[]')) || []); } catch (e) {}
 let RECIB = [], recibErr = '', recibUnsub = null, recibPrimera = true, recibListo = false;
