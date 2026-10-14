@@ -36,7 +36,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.35 
 [hidden] { display: none !important; }
 button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.f-gas { --fl: var(--gas); } .f-oil { --fl: var(--oil); } .f-fire { --fl: var(--fire); } .f-steel { --fl: var(--steel); }
+.f-water { --fl: #4FA3D9; } .f-gas { --fl: var(--gas); } .f-oil { --fl: var(--oil); } .f-fire { --fl: var(--fire); } .f-steel { --fl: var(--steel); }
 .wrap { max-width: 720px; margin: 0 auto; }
 
 /* Barra superior */
@@ -696,6 +696,21 @@ addSheet({ id: 'tanques', carpeta: 'TANQUES', grp: 'TurboExpander y tanques', ti
 addSheet({ id: 'cargas', carpeta: 'CARGA DE ACEITE', grp: 'Carga de aceite', title: 'Carga de aceite', fluid: 'oil', groups: CARGA_ACEITE_GROUPS, cols: 2 });
 // addSheet({ id: 'aceite', carpeta: 'NIVELES DE ACEITE', grp: 'Reportes y aceite', title: 'Niveles de aceite', fluid: 'oil', groups: ACEITE_GROUPS, cols: 2 });
 [1, 2, 3, 5, 6].forEach(n => addSheet({ id: 'mc' + n, carpeta: 'MOTOCOMPRESORES', grp: 'Motocompresores', title: 'MC#' + n, fluid: 'gas', groups: MC_GROUPS }));
+const ABL_CAP = 15; // m³ que procesa cada columna
+const ABLAND_GROUPS = [
+  { t: 'Columnas', f: [
+    opt('col', 'Columna en servicio', ['Master', 'Esclava']),
+    num('m3_falt', 'Metros faltantes para completar los ' + ABL_CAP + ' m³', 'm³', { max: ABL_CAP }),
+  ] },
+  { t: 'Cisternas', f: [
+    num('h_blanda', 'Altura cisterna agua blanda', 'cm'),
+    num('h_dura', 'Altura cisterna agua dura', 'cm'),
+  ] },
+  { t: 'Control', f: [
+    num('dureza', 'Medición de dureza', 'mg/L'),
+  ] },
+];
+addSheet({ id: 'ablandador', carpeta: 'ABLANDADOR', grp: 'Ablandador', title: 'Ablandador', fluid: 'water', groups: ABLAND_GROUPS });
 // addSheet({ id: 'frickA', carpeta: 'FRICK', grp: 'Otros equipos', title: 'Frick K-401A', fluid: 'gas', groups: FRICK_GROUPS });
 // addSheet({ id: 'frickB', carpeta: 'FRICK', grp: 'Otros equipos', title: 'Frick K-401B', fluid: 'gas', groups: FRICK_GROUPS });
 // addSheet({ id: 'rci', carpeta: 'RCI', grp: 'Seguridad', title: 'Prueba semanal de RCI', fluid: 'fire', groups: RCI_GROUPS, photos: { key: 'fotosRci', max: 6 } });
@@ -1370,7 +1385,7 @@ const ICONS = {
   bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 20 8v8l-8 4.5L4 16V8l8-4.5z"/><circle cx="12" cy="12" r="3.1"/></svg>',
   flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 2.5-.5 3.8-1.6 5C9 9.4 8 11 8 13a4 4 0 1 0 8 0c0-1.7-.9-2.7-1.6-3.7.1 1.2-.4 1.9-1 2.3.5-1.8-.8-2.9-.8-5C12.9 6 12.6 4.5 12 3z"/></svg>',
 };
-const GROUP_ICON = { 'Recompresores': 'gauge', 'TurboExpander y tanques': 'tank', 'Motocompresores': 'engine', 'Carga de aceite': 'drop', 'Otros equipos': 'bolt', 'Seguridad': 'flame' };
+const GROUP_ICON = { 'Ablandador': 'drop', 'Recompresores': 'gauge', 'TurboExpander y tanques': 'tank', 'Motocompresores': 'engine', 'Carga de aceite': 'drop', 'Otros equipos': 'bolt', 'Seguridad': 'flame' };
 const BRANDMARK = '<svg viewBox="0 0 40 40"><polygon points="20,3 35,11.5 35,28.5 20,37 5,28.5 5,11.5" fill="none" stroke="#fff" stroke-width="2"/><polygon points="20,9 29.3,14.4 29.3,25.6 20,31 10.7,25.6 10.7,14.4" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="1"/><text x="20" y="25.5" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-weight="700" font-size="15" fill="#fff">K</text></svg>';
 const PLANT_ART = `<svg viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 <defs>
@@ -2830,6 +2845,35 @@ function hojaCubicacion(wb) {
   xs(ws, r, 4, Math.round(COMP.D * 10) / 10, { numFmt: '0.0', font: { bold: true } }); xs(ws, r, 5, Math.round(COMP.VTOT * 100) / 100, { numFmt: '0.00', font: { bold: true } }); xs(ws, r, 6, 1, { numFmt: '0.0%', font: { bold: true } });
   xmerge(ws, r + 2, 4, r + 2, 6, 'Misma cuenta que la planilla de carga de aceite (Ø 560 mm × 850 mm).', { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left', wrapText: true } });
 }
+// Ablandador: una fila por lectura del día
+function hojaAblandadorDia(wb, nombre, dia, lect) {
+  const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }] });
+  const cols = [['Hora', 9], ['Columna en servicio', 12], ['m³ faltantes (de ' + ABL_CAP + ')', 13], ['m³ procesados', 12], ['Agua blanda (cm)', 13], ['Agua dura (cm)', 13], ['Dureza (mg/L)', 12], ['Operador', 22]];
+  cols.forEach(([, w], i) => ws.getColumn(2 + i).width = w); ws.getColumn(1).width = 2;
+  const last = 1 + cols.length;
+  ws.getRow(1).height = 34; ws.getRow(3).height = 20; ws.getRow(4).height = 34;
+  xmerge(ws, 1, 2, 1, last - 2, 'ABLANDADOR', { font: { bold: true, size: 16 }, border: false, align: { horizontal: 'left', vertical: 'middle' } });
+  ws.addImage(logoId(wb), { tl: { col: last - 2 + 0.2, row: 0.1 }, ext: { width: 140, height: 41 }, editAs: 'oneCell' });
+  xmerge(ws, 3, 2, 3, 3, fDate(dia), { numFmt: 'dddd d/mm/yyyy', font: { bold: true, size: 11 }, border: 'medium' });
+  xmerge(ws, 3, 4, 3, 5, 'Columnas', { font: { bold: true, size: 10 }, fill: 'FFDDEBF7', border: 'medium' });
+  xmerge(ws, 3, 6, 3, 7, 'Cisternas', { font: { bold: true, size: 10 }, fill: 'FFDDEBF7', border: 'medium' });
+  xmerge(ws, 3, 8, 3, 9, 'Control', { font: { bold: true, size: 10 }, fill: 'FFDDEBF7', border: 'medium' });
+  cols.forEach(([t], i) => xs(ws, 4, 2 + i, t, { font: { bold: true, size: 10 }, fill: 'FF9BE3E3', border: 'medium', align: { horizontal: 'center', vertical: 'middle', wrapText: true } }));
+  const nf = Math.max(lect.length, 4);
+  for (let i = 0; i < nf; i++) {
+    const x = lect[i], r = 5 + i, v = x ? x.v : {};
+    ws.getRow(r).height = 20;
+    const falt = x ? toNum(v.m3_falt) : null;
+    xs(ws, r, 2, x ? fHoraNum(x.fecha) : null, { numFmt: 'hh:mm', font: { bold: true } });
+    xs(ws, r, 3, x && v.col ? ({ '1': 'Master', '2': 'Esclava' }[v.col] || v.col) : null, { font: { bold: true, size: 11 } });
+    xs(ws, r, 4, falt, { numFmt: '0.0#' });
+    xs(ws, r, 5, falt === null ? null : { formula: ABL_CAP + '-' + ws.getColumn(4).letter + r, result: Math.round((ABL_CAP - falt) * 100) / 100 }, { numFmt: '0.0#' });
+    xs(ws, r, 6, x ? xval(v.h_blanda) : null);
+    xs(ws, r, 7, x ? xval(v.h_dura) : null);
+    xs(ws, r, 8, x ? xval(v.dureza) : null, { font: { bold: true } });
+    xs(ws, r, 9, x ? x.operador : null, { font: { size: 9 } });
+  }
+}
 /* ---- armado y descarga ---- */
 const XL_SECC = [
   { id: 'rec', label: 'Recompresores', ids: ['rc4', 'rc7', 'rc8', 'rc9'] },
@@ -2837,6 +2881,7 @@ const XL_SECC = [
   { id: 'tanques', label: 'Tanques', ids: ['tanques'] },
   { id: 'aceite', label: 'Carga de aceite', ids: ['cargas'] },
   { id: 'mc', label: 'Motocompresores', ids: ['mc1', 'mc2', 'mc3', 'mc5', 'mc6'] },
+  { id: 'ablan', label: 'Ablandador', ids: ['ablandador'] },
 ];
 async function bajarExcel(sec) {
   if (!FB_OK) return toast('Sin conexión con el guardado compartido. Revisá internet.');
@@ -2856,6 +2901,7 @@ async function bajarExcel(sec) {
       else if (sec.id === 'turbo') hojaTurboDia(wb, nom, dia, lect);
       else if (sec.id === 'tanques') hojaTanques(wb, nom, delDia, dia);
       else if (sec.id === 'aceite') hojaAceiteDia(wb, nom, dia, delDia);
+      else if (sec.id === 'ablan') hojaAblandadorDia(wb, nom, dia, delDia);
     }
     if (sec.id === 'aceite') hojaCubicacion(wb);
     // abrir en el día de hoy (o el último con lecturas)
@@ -2870,7 +2916,7 @@ async function bajarExcel(sec) {
     toast('Se bajó el Excel de ' + sec.label + ': una hoja por día, ' + (nMes ? nMes + (nMes === 1 ? ' lectura cargada.' : ' lecturas cargadas.') : 'todavía sin lecturas.'));
   } catch (e) { console.error(e); busy(false); toast('No se pudo armar el Excel: ' + (e.message || e)); }
 }
-const XL_INFO = { rec: ['gauge', 'RC#4 · RC#7 · RC#8 · RC#9'], turbo: ['bolt', 'Datos de seguimiento turboexpansor'], tanques: ['tank', 'Tanques LPG 1 al 7'], aceite: ['drop', 'Pamco · RC · Cisterna general'], mc: ['engine', 'MC#1 · MC#2 · MC#3 · MC#5 · MC#6'] };
+const XL_INFO = { rec: ['gauge', 'RC#4 · RC#7 · RC#8 · RC#9'], turbo: ['bolt', 'Datos de seguimiento turboexpansor'], tanques: ['tank', 'Tanques LPG 1 al 7'], aceite: ['drop', 'Pamco · RC · Cisterna general'], mc: ['engine', 'MC#1 · MC#2 · MC#3 · MC#5 · MC#6'], ablan: ['drop', 'Columnas · cisternas · dureza'] };
 function xlUltima(sc) {
   const ts = XL_ENV.filter(x => sc.ids.includes(x.sheetId)).reduce((m, x) => Math.max(m, x.ts), 0);
   if (!ts) return 'Sin lecturas todavía';
