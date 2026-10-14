@@ -485,34 +485,31 @@ const MC_GROUPS = [
 ];
 
 /* ---------- Recompresores (RC#4, 7, 8) ---------- */
+// Orden de toma en campo (números marcados en la planilla de papel del Recompresor Waukesha L7042 / Ariel JGD2)
 const RC_GROUPS = [
-  { t: 'Motor', f: [
-    num('rpm', 'R.P.M. motor'),
-    num('dp_ac_mot', 'Presión diferencial filtros aceite motor'),
-    num('p_ac_mot', 'Presión aceite motor (tablero)'),
-    num('t_ac_mot', 'Temperatura aceite motor'),
-    num('t_agua', 'Temperatura agua principal'),
-    num('t_adm_izq', 'Temperatura admisión motor banco izq.'),
-    num('t_adm_der', 'Temperatura admisión motor banco der.'),
-    num('p_mult_izq', 'Presión múltiple admisión izquierdo'),
-    num('p_mult_der', 'Presión múltiple admisión derecho'),
-  ] },
-  { t: 'Compresor', f: [
-    num('q_succ', 'Caudal de succión'),
-    num('p_succ', 'Presión succión compresor'),
-    num('p_d_c1', 'Presión descarga compresor cilindro 1'),
-    num('p_d_c2', 'Presión descarga compresor cilindro 2'),
-    num('t_d_izq', 'Temperatura descarga cilindro izquierdo'),
-    num('t_d_der', 'Temperatura descarga cilindro derecho'),
-    num('p_ac_comp_tab', 'Presión aceite compresor (tablero)'),
-    num('p_ac_comp_ent', 'Presión aceite compresor entrada'),
-    num('p_ac_comp_sal', 'Presión aceite compresor salida'),
-    num('t_ac_comp', 'Temperatura aceite compresor'),
-  ] },
-  { t: 'Ambiente y filtros de aire', f: [
-    num('t_amb', 'Temperatura ambiente'),
-    opt('fa_der', 'Filtros de aire derecho', OKS),
-    opt('fa_izq', 'Filtros de aire izquierdo', OKS),
+  { t: 'Orden de toma (como la planilla)', f: [
+    num('t_d_der', '1 · Temp. °F descarga compresor – Derecho', '', { neg: false }),
+    num('p_ac_comp_ent', '2 · Presión aceite compresor – Entrada'),
+    num('p_ac_comp_sal', '3 · Presión aceite compresor – Salida'),
+    num('t_d_izq', '4 · Temp. °F descarga compresor – Izquierdo', '', { neg: false }),
+    num('dp_ac_mot', '5 · Presión diferencial de filtros motor'),
+    num('rpm', '6 · R.P.M. motor'),
+    num('p_ac_mot', '7 · Presión de aceite – Motor'),
+    num('p_ac_comp_tab', '8 · Presión de aceite – Compresor'),
+    num('p_d_c1', '9 · Pres. descarga compresor – Cilindro N° 1'),
+    num('p_d_c2', '10 · Pres. descarga compresor – Cilindro N° 2'),
+    num('p_succ', '11 · Presión succión compresor'),
+    num('t_adm_izq', '12 · Temp. °F aire motor – 1 Izquierdo', '', { neg: false }),
+    num('t_adm_der', '13 · Temp. °F aire motor – 2 Derecho', '', { neg: false }),
+    num('t_ac_mot', '14 · Temp. °F aceite – 3 Motor', '', { neg: false }),
+    num('t_ac_comp', '15 · Temp. °F aceite – 4 Compresor', '', { neg: false }),
+    num('t_agua', '16 · Temp. °F agua – 5 Motor', '', { neg: false }),
+    num('p_mult_izq', '17 · Pres. admisión múltiple – Izquierdo'),
+    num('p_mult_der', '18 · Pres. admisión múltiple – Derecho'),
+    opt('fa_izq', '19 · Filtro de aire – Izquierdo', OKS),
+    opt('fa_der', '20 · Filtro de aire – Derecho', OKS),
+    num('q_succ', '21 · Caudal de succión (MMSCFD)'),
+    num('t_amb', '22 · T° ambiente °C', '', { neg: true }),
   ] },
 ];
 
@@ -2593,52 +2590,70 @@ const RC_FILAS = [
   ['Filtros de aire derecho', '', 'fa_der', 'fa_der'],
   ['Filtros de aire izquierdo', '', 'fa_izq', 'fa_izq'],
 ];
+// Filas de la planilla de papel: [rótulo, sub-rótulo, clave RC#4-7-8, clave RC#9]
+const RC_PAPEL = [
+  ['Caudal de Succión  ( MMSCFD )', null, 'q_succ', 'q_succ'],
+  ['T° Ambiente  °C.', null, 't_amb', 't_amb'],
+  ['R.P.M.  Motor', null, 'rpm', 'rpm'],
+  ['Presión Diferencial de Filtros Motor', null, 'dp_ac_mot', 'dp_ac_mot'],
+  ['Presión de aceite', 'Motor', 'p_ac_mot', 'p_ac_mot'], [null, 'Compresor', 'p_ac_comp_tab', 'p_ac_comp'],
+  ['Presión Aceite Compresor', 'Entrada', 'p_ac_comp_ent', 'p_ac_ent'], [null, 'Salida', 'p_ac_comp_sal', 'p_ac_sal'],
+  ['Pres. Descarga Compresor', 'Cilindro N° 1', 'p_d_c1', null], [null, 'Cilindro N° 2', 'p_d_c2', null],
+  ['Temp. °F Descarga Compresor', 'Izquierdo', 't_d_izq', 't_d1'], [null, 'Derecho', 't_d_der', 't_d2'],
+  ['Presión Succión Compresor', null, 'p_succ', 'p_succ'],
+  ['Temperatura °F Aire Motor', '1 Izquierdo', 't_adm_izq', null], [null, '2 Derecho', 't_adm_der', null],
+  ['Temperatura °F Aceite', '3 Motor', 't_ac_mot', 't_ac_mot'], [null, '4 Compresor', 't_ac_comp', 't_ac_comp'],
+  ['Temperatura °F Agua', '5 Motor', 't_agua', 't_agua'],
+  ['Pres. Admisión múltiple', 'Izquierdo', 'p_mult_izq', null], [null, 'Derecho', 'p_mult_der', null],
+  ['Filtro de aire', 'Izquierdo', 'fa_izq', 'fa_izq'], [null, 'Derecho', 'fa_der', 'fa_der'],
+  ['Pres. Descarga Compresor 1st (RC#9)', null, null, 'p_desc'],
+  ['Temp. °F Succión Compresor (RC#9)', null, null, 't_succ'],
+];
+// dos tomas por día como en el papel: 10:00 Hs. (antes de las 16) y 22:00 Hs. (desde las 16)
+function rcTomas(lect) { const t = [null, null]; lect.forEach(x => { t[+x.fecha.slice(11, 13) < 16 ? 0 : 1] = x; }); return t; }
 function hojaRCdia(wb, nombre, dia, de) {
-  const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', xSplit: 2, ySplit: 5, showGridLines: false }] });
-  ws.getColumn(1).width = 44; ws.getColumn(2).width = 11;
-  ws.getRow(1).height = 22; ws.getRow(2).height = 22; ws.getRow(3).height = 24; ws.getRow(4).height = 20; ws.getRow(5).height = 18;
-  xmerge(ws, 1, 1, 3, 2, null, { border: 'medium' });
-  ws.addImage(logoId(wb), { tl: { col: 0.15, row: 0.3 }, ext: { width: 270, height: 79 }, editAs: 'oneCell' });
-  xcell(ws, 4, 1, 'Datos Operativos Recompresores', { font: { bold: true, size: 12 }, border: 'medium' });
-  xcell(ws, 4, 2, 'Unidad', { font: { bold: true, size: 10 }, border: 'medium' });
-  xcell(ws, 5, 1, 'Hs.', { font: { bold: true, size: 12 }, border: 'medium' });
-  xcell(ws, 5, 2, null, { border: 'medium' });
-  const GRIS = 'FFD9D9D9', SECC = 'FFDDEBF7', ZEBRA = 'FFF5F8FB';
-  // columna de nombres
-  let par = false;
-  RC_FILAS.forEach((f, i) => {
-    const r = 6 + i;
-    ws.getRow(r).height = f.length === 1 ? 18 : 17;
-    if (f.length === 1) { xcell(ws, r, 1, f[0].toUpperCase(), { font: { bold: true, size: 11, color: { argb: 'FF1F3864' } }, fill: SECC, border: 'medium', align: { horizontal: 'left', vertical: 'middle', indent: 1 } }); xcell(ws, r, 2, null, { fill: SECC, border: 'medium' }); par = false; return; }
-    const fz = par ? ZEBRA : null; par = !par;
-    xcell(ws, r, 1, f[0], { font: { size: 11 }, fill: fz, border: 'thin', align: { horizontal: 'left', vertical: 'middle', indent: 1 } });
-    xcell(ws, r, 2, f[1] ? '[' + f[1] + ']' : null, { font: { size: 9, color: { argb: 'FF555555' } }, fill: fz, border: 'thin' });
+  const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', xSplit: 2, ySplit: 3, showGridLines: false }] });
+  ws.getColumn(1).width = 38; ws.getColumn(2).width = 15;
+  const eqs = [4, 7, 8, 9], last = 2 + eqs.length * 2;
+  for (let c = 3; c <= last; c++) ws.getColumn(c).width = 12;
+  ws.getRow(1).height = 30; ws.getRow(2).height = 22; ws.getRow(3).height = 20;
+  xmerge(ws, 1, 1, 1, last, 'Recompresor  Waukesha L 7042 / Ariel JGD 2', { font: { bold: true, size: 15 }, border: false, align: { horizontal: 'left', vertical: 'middle' } });
+  xmerge(ws, 2, 1, 2, 2, 'EQUIPO', { font: { bold: true, size: 12 }, border: 'medium' });
+  xmerge(ws, 3, 1, 3, 2, 'Hora', { font: { bold: true, size: 12 }, border: 'medium' });
+  const tomas = eqs.map(n => rcTomas(de('rc' + n)));
+  eqs.forEach((n, k) => {
+    const c = 3 + k * 2;
+    xmerge(ws, 2, c, 2, c + 1, 'Recomp. N° ' + n, { font: { size: 13 }, border: 'medium' });
+    xs(ws, 3, c, '10:00 Hs.', { font: { bold: true, size: 10 }, border: 'medium' });
+    xs(ws, 3, c + 1, '22:00 Hs.', { font: { bold: true, size: 10 }, border: 'medium' });
   });
-  // un bloque de columnas por equipo
-  let c = 3;
-  for (const n of [4, 7, 8, 9]) {
-    const lect = de('rc' + n), k = Math.max(lect.length, 2), idx = n === 9 ? 3 : 2;
-    for (let j = 0; j < k; j++) ws.getColumn(c + j).width = 10;
-    xmerge(ws, 3, c, 3, c + k - 1, 'ReCompresor #' + pad2(n), { font: { bold: true, size: 12 }, border: 'medium', fill: 'FFE6E6E6' });
-    xmerge(ws, 4, c, 4, c + k - 1, fDate(dia), { numFmt: 'dd/mm/yyyy', font: { size: 11 }, border: 'medium' });
-    for (let j = 0; j < k; j++) {
-      const x = lect[j], cc = c + j;
-      xs(ws, 5, cc, x ? fHoraNum(x.fecha) : null, { numFmt: 'h:mm', font: { bold: true, size: 11 }, border: 'medium' });
-      let p2 = false;
-      RC_FILAS.forEach((f, i) => {
-        const r = 6 + i;
-        if (f.length === 1) { xs(ws, r, cc, null, { fill: SECC, border: 'medium' }); p2 = false; return; }
-        const key = f[idx], fz = p2 ? ZEBRA : null; p2 = !p2;
-        if (!key) xs(ws, r, cc, null, { fill: GRIS });
-        else xs(ws, r, cc, x ? xval(x.v[key]) : null, { font: { size: 11 }, fill: fz });
-      });
+  let r = 4;
+  RC_PAPEL.forEach((f, i) => {
+    ws.getRow(r).height = 24;
+    const sub = f[1], grupo = f[0] !== null && RC_PAPEL[i + 1] && RC_PAPEL[i + 1][0] === null;
+    if (f[0] !== null) {
+      if (!sub) xmerge(ws, r, 1, r, 2, f[0], { font: { bold: true, size: 11 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle', indent: 1 } });
+      else xmerge(ws, r, 1, grupo ? r + 1 : r, 1, f[0], { font: { bold: true, size: 11 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle', indent: 1, wrapText: true } });
     }
-    for (let r = 3; r <= 5 + RC_FILAS.length; r++) { const cl = ws.getCell(r, c); cl.border = Object.assign({}, cl.border, { left: { style: 'medium' } }); }
-    c += k;
-  }
-  const ops = [...new Set(['rc4', 'rc7', 'rc8', 'rc9'].flatMap(id => de(id)).map(x => x.operador).filter(Boolean))];
-  if (ops.length) xmerge(ws, 7 + RC_FILAS.length, 1, 7 + RC_FILAS.length, 2, 'Cargado por: ' + ops.join(', '), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+    if (sub) xcell(ws, r, 2, sub, { font: { bold: true, size: 10 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle', indent: 1 } });
+    eqs.forEach((n, k) => {
+      const key = n === 9 ? f[3] : f[2];
+      for (let j = 0; j < 2; j++) {
+        const x = tomas[k][j], c = 3 + k * 2 + j;
+        if (!key) xs(ws, r, c, null, { fill: 'FFD9D9D9' });
+        else xs(ws, r, c, x ? xval(x.v[key]) : null, { font: { size: 11 } });
+      }
+    });
+    r++;
+  });
+  // hora real de cada toma y quién cargó
+  xcell(ws, r, 2, 'Hora real', { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'right' } });
+  eqs.forEach((n, k) => { for (let j = 0; j < 2; j++) { const x = tomas[k][j]; xs(ws, r, 3 + k * 2 + j, x ? fHoraNum(x.fecha) : null, { numFmt: 'hh:mm', font: { size: 9, color: { argb: 'FF555555' } }, border: false }); } });
+  const ops = [...new Set(eqs.flatMap(n => de('rc' + n)).map(x => x.operador).filter(Boolean))];
+  xcell(ws, r + 1, 1, 'Fecha: ' + dia.slice(8, 10) + '/' + dia.slice(5, 7) + '/' + dia.slice(0, 4) + (ops.length ? '   ·   Cargado por: ' + ops.join(', ') : ''), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+  ws.addImage(logoId(wb), { tl: { col: last - 1.6, row: 0.05 }, ext: { width: 130, height: 38 }, editAs: 'oneCell' });
 }
+
 
 /* Motocompresores: la columna de nombres una vez y los 5 equipos al lado (fecha arriba, hora abajo) */
 function hojaMCdia(wb, nombre, dia, de) {
