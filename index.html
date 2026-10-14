@@ -2360,7 +2360,8 @@ const fDate = f => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(f || ''); return m 
 const fHora = f => { const m = /T(\d\d:\d\d)/.exec(f || ''); return m ? m[1] : ''; };
 
 // Lecturas guardadas de esas planillas (una por cada "Guardar"). Si una planilla se volvió a guardar
-// dentro de los 90 minutos (corrección), queda solo la última.
+// a los pocos minutos (corrección de un dato), queda solo la última.
+const MIN_CORRECCION = 10;
 async function lecturasDe(ids, mes) {
   const s = await FDB.collection(KTI_COL).where('tipo', '==', 'planilla').get();
   const L = [];
@@ -2375,7 +2376,7 @@ async function lecturasDe(ids, mes) {
   L.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.ts - b.ts));
   const out = [];
   for (const x of L) {
-    for (let i = out.length - 1; i >= 0; i--) if (out[i].sheetId === x.sheetId) { if (minDif(out[i].fecha, x.fecha) < 90) out.splice(i, 1); break; }
+    for (let i = out.length - 1; i >= 0; i--) if (out[i].sheetId === x.sheetId) { if (minDif(out[i].fecha, x.fecha) < MIN_CORRECCION) out.splice(i, 1); break; }
     out.push(x);
   }
   return out;
@@ -2626,22 +2627,24 @@ const RC_PAPEL = [
   ['Temp. °F Succión Compresor (RC#9)', null, null, 't_succ'],
 ];
 // dos tomas por día como en el papel: 10:00 Hs. (antes de las 16) y 22:00 Hs. (desde las 16)
-function rcTomas(lect) { const t = [null, null]; lect.forEach(x => { t[+x.fecha.slice(11, 13) < 16 ? 0 : 1] = x; }); return t; }
+function rcTomas(lect) { const t = lect.slice(); while (t.length < 2) t.push(null); return t; }
 function hojaRCdia(wb, nombre, dia, de) {
   const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', xSplit: 2, ySplit: 3, showGridLines: false }] });
   ws.getColumn(1).width = 38; ws.getColumn(2).width = 15;
-  const eqs = [4, 7, 8, 9], last = 2 + eqs.length * 2;
+  const eqs = [4, 7, 8, 9];
+  const tomas = eqs.map(n => rcTomas(de('rc' + n)));
+  const c0 = []; let cc = 3; tomas.forEach(t => { c0.push(cc); cc += t.length; });
+  const last = cc - 1;
   for (let c = 3; c <= last; c++) ws.getColumn(c).width = 12;
   ws.getRow(1).height = 30; ws.getRow(2).height = 22; ws.getRow(3).height = 20;
   xmerge(ws, 1, 1, 1, last, 'Recompresor  Waukesha L 7042 / Ariel JGD 2', { font: { bold: true, size: 15 }, border: false, align: { horizontal: 'left', vertical: 'middle' } });
   xmerge(ws, 2, 1, 2, 2, 'EQUIPO', { font: { bold: true, size: 12 }, border: 'medium' });
   xmerge(ws, 3, 1, 3, 2, 'Hora', { font: { bold: true, size: 12 }, border: 'medium' });
-  const tomas = eqs.map(n => rcTomas(de('rc' + n)));
+  const hsVacia = ['10:00 Hs.', '22:00 Hs.'];
   eqs.forEach((n, k) => {
-    const c = 3 + k * 2;
-    xmerge(ws, 2, c, 2, c + 1, 'Recomp. N° ' + n, { font: { size: 13 }, border: 'medium' });
-    xs(ws, 3, c, '10:00 Hs.', { font: { bold: true, size: 10 }, border: 'medium' });
-    xs(ws, 3, c + 1, '22:00 Hs.', { font: { bold: true, size: 10 }, border: 'medium' });
+    const c = c0[k], t = tomas[k];
+    xmerge(ws, 2, c, 2, c + t.length - 1, 'Recomp. N° ' + n, { font: { size: 13 }, border: 'medium' });
+    t.forEach((x, j) => xs(ws, 3, c + j, x ? x.fecha.slice(11, 16) + ' Hs.' : (hsVacia[j] || ''), { font: { bold: true, size: 10, color: x ? null : { argb: 'FF999999' } }, border: 'medium' }));
   });
   let r = 4;
   RC_PAPEL.forEach((f, i) => {
@@ -2654,19 +2657,16 @@ function hojaRCdia(wb, nombre, dia, de) {
     if (sub) xcell(ws, r, 2, sub, { font: { bold: true, size: 10 }, border: 'medium', align: { horizontal: 'left', vertical: 'middle', indent: 1 } });
     eqs.forEach((n, k) => {
       const key = n === 9 ? f[3] : f[2];
-      for (let j = 0; j < 2; j++) {
-        const x = tomas[k][j], c = 3 + k * 2 + j;
+      for (let j = 0; j < tomas[k].length; j++) {
+        const x = tomas[k][j], c = c0[k] + j;
         if (!key) xs(ws, r, c, null, { fill: 'FFD9D9D9' });
         else xs(ws, r, c, x ? xval(x.v[key]) : null, { font: { size: 11 } });
       }
     });
     r++;
   });
-  // hora real de cada toma y quién cargó
-  xcell(ws, r, 2, 'Hora real', { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'right' } });
-  eqs.forEach((n, k) => { for (let j = 0; j < 2; j++) { const x = tomas[k][j]; xs(ws, r, 3 + k * 2 + j, x ? fHoraNum(x.fecha) : null, { numFmt: 'hh:mm', font: { size: 9, color: { argb: 'FF555555' } }, border: false }); } });
   const ops = [...new Set(eqs.flatMap(n => de('rc' + n)).map(x => x.operador).filter(Boolean))];
-  xcell(ws, r + 1, 1, 'Fecha: ' + dia.slice(8, 10) + '/' + dia.slice(5, 7) + '/' + dia.slice(0, 4) + (ops.length ? '   ·   Cargado por: ' + ops.join(', ') : ''), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
+  xcell(ws, r + 1 - 1, 1, 'Fecha: ' + dia.slice(8, 10) + '/' + dia.slice(5, 7) + '/' + dia.slice(0, 4) + (ops.length ? '   ·   Cargado por: ' + ops.join(', ') : ''), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
   ws.addImage(logoId(wb), { tl: { col: last - 1.6, row: 0.05 }, ext: { width: 130, height: 38 }, editAs: 'oneCell' });
 }
 
@@ -2704,30 +2704,32 @@ const TURBO_HS = [['10:00', 10], ['16:00', 16], ['20:00', 20], ['04:00', 4]];
 function turboSlots(todas, dia) {
   const d0 = new Date(dia + 'T00:00'), sig = new Date(d0); sig.setDate(sig.getDate() + 1);
   const diaSig = sig.getFullYear() + '-' + pad2(sig.getMonth() + 1) + '-' + pad2(sig.getDate());
-  const slots = [null, null, null, null];
+  const slots = [null, null, null, null], extras = [];
   for (const x of todas) {
     const f = x.fecha.slice(0, 10), hh = +x.fecha.slice(11, 13), mm = +x.fecha.slice(14, 16) || 0, t = hh + mm / 60;
     let k = -1;
     if (f === dia && hh >= 7) k = t < 13 ? 0 : t < 18 ? 1 : 2;
     else if (f === diaSig && hh < 7) k = 3;
-    if (k >= 0) slots[k] = x; // si hay dos en el mismo horario queda la última
+    if (k >= 0) { if (slots[k]) extras.push(x); else slots[k] = x; } // dos tomas en el mismo horario: la otra va en columna extra
   }
-  return { slots, diaSig };
+  return { slots, diaSig, extras };
 }
 function hojaTurboDia(wb, nombre, dia, todas) {
-  const { slots, diaSig } = turboSlots(todas, dia);
+  const { slots, diaSig, extras } = turboSlots(todas, dia);
+  const cols = TURBO_HS.map(([lab, hh], j) => ({ x: slots[j], hora: hh / 24, fecha: j === 3 ? diaSig : dia, fija: true }))
+    .concat(extras.map(x => ({ x, hora: fHoraNum(x.fecha), fecha: x.fecha.slice(0, 10), fija: false })));
   const ws = wb.addWorksheet(nombre, { views: [{ state: 'frozen', xSplit: 4, ySplit: 3, showGridLines: false }] });
   ws.getColumn(1).width = 69.3; ws.getColumn(2).width = 7.7; ws.getColumn(3).width = 10; ws.getColumn(4).width = 12.7;
-  for (let j = 0; j < 4; j++) ws.getColumn(5 + j).width = 16.6;
+  for (let j = 0; j < cols.length; j++) ws.getColumn(5 + j).width = 16.6;
   [16.5, 16.5, 16.5].forEach((hh, i) => ws.getRow(1 + i).height = hh);
   xcell(ws, 2, 1, 'DATOS  DE  SEGUIMIENTO  TURBOEXPANSOR', { font: { bold: true, size: 12 }, border: 'medium' });
   xcell(ws, 3, 1, 'Modelo: 13MTC  Serial:  646/0702', { font: { bold: true, size: 11 }, border: 'medium' });
   xmerge(ws, 2, 2, 2, 3, 'Set Point', { font: { bold: true, size: 12 }, border: 'medium' });
   xcell(ws, 3, 2, 'Min', { font: { size: 11 }, border: 'medium' }); xcell(ws, 3, 3, 'Máx', { font: { size: 11 }, border: 'medium' });
   xmerge(ws, 2, 4, 3, 4, 'Unidad ', { font: { bold: true, size: 11 }, border: 'medium' });
-  TURBO_HS.forEach(([lab, hh], j) => {
-    xs(ws, 2, 5 + j, fDate(j === 3 ? diaSig : dia), { numFmt: 'd-mmm-yy', font: { bold: true, size: 12 }, border: 'medium' });
-    xs(ws, 3, 5 + j, hh / 24, { numFmt: 'hh:mm', font: { bold: true, size: 12 }, border: 'medium', fill: slots[j] ? null : 'FFF2F2F2' });
+  cols.forEach((cl, j) => {
+    xs(ws, 2, 5 + j, fDate(cl.fecha), { numFmt: 'd-mmm-yy', font: { bold: true, size: 12 }, border: 'medium' });
+    xs(ws, 3, 5 + j, cl.hora, { numFmt: 'hh:mm', font: { bold: true, size: 12, color: cl.fija ? null : { argb: 'FF1F4FD8' } }, border: 'medium', fill: cl.x ? null : 'FFF2F2F2' });
   });
   TURBO_ROWS.forEach((rw, i) => {
     const r = 4 + i;
@@ -2736,13 +2738,13 @@ function hojaTurboDia(wb, nombre, dia, todas) {
     xs(ws, r, 2, rw[1], { font: { bold: true, size: 12, color: { argb: 'FF548235' } }, border: 'medium' });
     xs(ws, r, 3, rw[2], { font: { bold: true, size: 12, color: { argb: 'FF548235' } }, border: 'medium' });
     xs(ws, r, 4, rw[3] || null, { font: { size: 10 }, border: 'medium' });
-    for (let j = 0; j < 4; j++) xs(ws, r, 5 + j, slots[j] ? xval(slots[j].v[rw[4]]) : null, { font: { size: 12 } });
+    cols.forEach((cl, j) => xs(ws, r, 5 + j, cl.x ? xval(cl.x.v[rw[4]]) : null, { font: { size: 12 } }));
   });
   // hora real de cada toma (por si no fue justo en el horario)
   const rr = 4 + TURBO_ROWS.length + 1;
   xcell(ws, rr, 4, 'Hora real', { font: { size: 9, color: { argb: 'FF555555' } }, border: false });
-  for (let j = 0; j < 4; j++) xs(ws, rr, 5 + j, slots[j] ? fHoraNum(slots[j].fecha) : null, { numFmt: 'hh:mm', font: { size: 9, color: { argb: 'FF555555' } }, border: false });
-  const ops = [...new Set(slots.filter(Boolean).map(x => x.operador).filter(Boolean))];
+  cols.forEach((cl, j) => xs(ws, rr, 5 + j, cl.x ? fHoraNum(cl.x.fecha) : null, { numFmt: 'hh:mm', font: { size: 9, color: { argb: 'FF555555' } }, border: false }));
+  const ops = [...new Set(cols.map(c => c.x).filter(Boolean).map(x => x.operador).filter(Boolean))];
   if (ops.length) xcell(ws, rr + 1, 1, 'Cargado por: ' + ops.join(', '), { font: { size: 9, color: { argb: 'FF555555' } }, border: false, align: { horizontal: 'left' } });
 }
 
