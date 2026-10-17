@@ -121,6 +121,7 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .hturno .ht2 { font: 600 16.5px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hturno .ht2.falta { color: var(--warn); }
 .hturno .chev { flex: none; font-size: 24px; color: var(--ink2); }
+.sinsenal { position: fixed; left: 50%; top: calc(62px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 65; width: max-content; max-width: calc(100% - 24px); padding: 7px 14px; border-radius: 999px; background: #B7791F; color: #fff; font-weight: 600; font-size: 14px; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
 .nuevaver { position: fixed; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 10px 12px 10px 16px; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 600; box-shadow: 0 8px 28px rgba(0,0,0,.4); }
 .nuevaver .btn { background: #fff; color: var(--primary); border-color: #fff; min-height: 40px; }
 .xlavisos { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding: 10px 14px; border: 1px dashed var(--rule); border-radius: 10px; color: var(--ink2); font-size: 14.5px; }
@@ -2185,7 +2186,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function esMovil() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-14c';
+const APP_VER = '2026-10-17a';
 async function chequearVersion() {
   try {
     const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text();
@@ -2197,6 +2198,15 @@ async function chequearVersion() {
   } catch (e) {}
 }
 setTimeout(chequearVersion, 4000);
+// Cartel de sin señal: la app sigue andando, lo guardado sale solo cuando vuelve
+function pintarSenal() {
+  let el = document.getElementById('sinSenal');
+  if (navigator.onLine === false) {
+    if (!el) document.body.append(h('div', { id: 'sinSenal', class: 'sinsenal' }, 'Sin señal · lo que guardes se envía al volver'));
+  } else if (el) { el.remove(); toast('Volvió la señal. Enviando lo guardado…'); }
+}
+window.addEventListener('online', pintarSenal); window.addEventListener('offline', pintarSenal);
+setTimeout(pintarSenal, 500);
 setInterval(chequearVersion, 10 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) chequearVersion(); });
 let BAJADOS = new Set();
