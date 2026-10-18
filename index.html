@@ -122,6 +122,13 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .hturno .ht2.falta { color: var(--warn); }
 .hturno .chev { flex: none; font-size: 24px; color: var(--ink2); }
 .sinsenal { position: fixed; left: 50%; top: calc(62px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 65; width: max-content; max-width: calc(100% - 24px); padding: 7px 14px; border-radius: 999px; background: #B7791F; color: #fff; font-weight: 600; font-size: 14px; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+.subar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 12px 0; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, #B7791F 22%, var(--card, #12324A)); border: 1px solid #B7791F; }
+.subar .sut { flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px; }
+.subar .sut b { color: #F6C26B; font-size: 16px; }
+.subar .sut span { font-size: 14px; opacity: .85; }
+.subar .sul { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+.subar .sufecha { min-width: 210px; color-scheme: dark; }
+.suerr { color: #FF8A80; min-height: 1.2em; margin: 6px 0 0; font-weight: 600; }
 .nuevaver { position: fixed; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 10px 12px 10px 16px; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 600; box-shadow: 0 8px 28px rgba(0,0,0,.4); }
 .nuevaver .btn { background: #fff; color: var(--primary); border-color: #fff; min-height: 40px; }
 .xlavisos { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding: 10px 14px; border: 1px dashed var(--rule); border-radius: 10px; color: var(--ink2); font-size: 14.5px; }
@@ -1495,7 +1502,7 @@ function buildDrawer() {
   const opSet = S.operador && S.operador.trim();
   const opLabel = opSet ? h('span', null, 'Turno actual: ', h('b', null, S.operador.trim())) : h('span', null, 'Configurar datos del turno');
   const pc = !esMovil();
-  if (!pc) head.append(h('button', { class: 'nd-op', type: 'button', onclick: () => menuGo({ name: 'turno' }) },
+  if (modoCarga()) head.append(h('button', { class: 'nd-op', type: 'button', onclick: () => menuGo({ name: 'turno' }) },
     opLabel, h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
   const quick = h('div', { class: 'nd-quick' },
     pc ? quickBtn('doc', 'Planillas Excel', () => menuGo({ name: 'home' })) : quickBtn('plus', 'Nuevo informe', () => { closeMenu(); nuevo(); }),
@@ -1532,7 +1539,7 @@ function menuGo(v, mode) { go(v, mode); }
 function renderTop() {
   const w = h('div', { class: 'wrap' });
   if (view.name === 'home') {
-    w.append(h('span', { class: 'brandtab' }, 'Datos KTI'), menuIcon(menuOpen));
+    w.append(h('span', { class: 'brandtab', onclick: suToque }, 'Datos KTI'), menuIcon(menuOpen));
   } else {
     const sh = view.name === 'sheet' ? BY[view.id] : null;
     const title = sh ? sh.title : view.name === 'turno' ? 'Datos del turno' : view.name === 'recibidos' ? 'Recibidos' : 'Historial';
@@ -1574,8 +1581,9 @@ function homeView() {
     h('span', { class: 'htx' }, h('span', { class: 'ht1' }, opSet ? 'Turno actual' : 'Datos del turno'),
       h('span', { class: 'ht2' + (opSet ? '' : ' falta') }, opSet ? S.operador.trim() + (S.legajo && S.legajo.trim() ? ' · legajo ' + S.legajo.trim() : '') : 'Tocá para cargar operador y legajo')),
     h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
-  document.body.classList.toggle('pcx', !esMovil());
-  if (!esMovil()) return [hero, excelPanel()];
+  document.body.classList.toggle('pcx', !modoCarga());
+  if (!esMovil() && !SU) return [hero, excelPanel()];
+  if (SU) return [hero, suBarra(), turno, ...GROUP_ORDER.map(accGroup), excelPanel()];
   return [hero, turno, ...GROUP_ORDER.map(accGroup)];
 }
 function accGroup(g) {
@@ -2141,9 +2149,9 @@ async function guardarPlanilla(sh) {
   if (!FB_OK) return toast('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
   const prev = S.guardadas && S.guardadas[sh.id];
   const corrige = prev && prev.corrigiendo && prev.env ? prev.env : null;
-  const ahora = stampOf(new Date());
+  const ahora = SU && SU_FECHA ? { fecha: SU_FECHA, seg: '00' } : stampOf(new Date());
   const title = driveTitle(sh, ahora, !!prev && prev.titulo === driveTitle(sh, ahora, false));
-  const env = enviarCentral('planilla', stateDe(sh), Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}));
+  const env = enviarCentral('planilla', stateDe(sh), Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}, SU ? { su: true } : {}));
   if (!env) return toast('No se pudo guardar. Probá de nuevo.');
   if (PRINCIPAL) marcarBajado([env]);
   (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', titulo: title, env };
@@ -2184,9 +2192,61 @@ try {
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function esMovil() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
+/* ---- Super usuario (oculto): en la compu habilita cargar planillas cuando falla un celular en campo ---- */
+// Se entra tocando 5 veces el título "Datos KTI" en la compu. Se guarda solo la huella de la clave.
+const SU_HASH = 'fb5d3e59f9b23fa7f69cb75f6904c0e3e2142e384a2311b3ccd074adbc746573';
+let SU = (() => { try { return sessionStorage.getItem('kti_su') === '1'; } catch (e) { return false; } })();
+let SU_FECHA = ''; // fecha y hora real de la lectura (vacío = ahora)
+const modoCarga = () => esMovil() || SU;
+let suToques = 0, suT = 0;
+function suToque() {
+  if (esMovil()) return;
+  const t = Date.now();
+  suToques = t - suT < 900 ? suToques + 1 : 1; suT = t;
+  if (suToques >= 5) { suToques = 0; if (!SU) suPedirClave(); }
+}
+async function suHuella(txt) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function suPedirClave() {
+  const inp = h('input', { class: 'txt', type: 'password', autocomplete: 'off', placeholder: 'Clave', 'aria-label': 'Clave de super usuario' });
+  const err = h('p', { class: 'suerr' });
+  const close = () => ovl.remove();
+  const probar = async () => {
+    if (await suHuella(inp.value.trim()) === SU_HASH) {
+      close(); SU = true; SU_FECHA = '';
+      try { sessionStorage.setItem('kti_su', '1'); } catch (e) {}
+      go({ name: 'home' }, 'replace');
+      toast('Modo carga habilitado en esta compu.');
+    } else { err.textContent = 'Clave incorrecta.'; inp.value = ''; inp.focus(); }
+  };
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') probar(); if (e.key === 'Escape') close(); });
+  const ovl = h('div', { class: 'ovl', onclick: e => { if (e.target === ovl) close(); } },
+    h('div', { class: 'dlg', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Super usuario' },
+      h('h2', null, 'Super usuario'), h('p', null, 'Ingresá la clave para cargar planillas desde esta compu.'), inp, err,
+      h('div', { class: 'dact' }, h('button', { class: 'btn', type: 'button', onclick: close }, 'Cancelar'),
+        h('button', { class: 'btn primary', type: 'button', onclick: probar }, 'Entrar'))));
+  document.body.append(ovl); inp.focus();
+}
+function suSalir() {
+  SU = false; SU_FECHA = ''; OPEN = null;
+  try { sessionStorage.removeItem('kti_su'); } catch (e) {}
+  go({ name: 'home' }, 'replace');
+  toast('Saliste del modo carga.');
+}
+function suBarra() {
+  const now = stampOf(new Date()).fecha;
+  const dt = h('input', { class: 'txt sufecha', type: 'datetime-local', value: SU_FECHA || now, max: now, 'aria-label': 'Fecha y hora de la lectura',
+    onchange: e => { SU_FECHA = e.target.value && e.target.value < stampOf(new Date()).fecha ? e.target.value.slice(0, 16) : ''; } });
+  return h('div', { class: 'subar' },
+    h('div', { class: 'sut' }, h('b', null, 'Modo carga · super usuario'), h('span', null, 'Para cargar planillas cuando falla un equipo en campo.')),
+    h('label', { class: 'sul' }, h('span', null, 'Fecha y hora de la lectura'), dt),
+    h('button', { class: 'btn small', type: 'button', onclick: suSalir }, 'Salir'));
+}
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-17a';
+const APP_VER = '2026-10-18b';
 async function chequearVersion() {
   try {
     const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text();
