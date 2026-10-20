@@ -2009,6 +2009,7 @@ async function generar() {
   let fmt;
   if (esMovil()) {
     if (!FB_OK) return toast('Sin conexión con la compu principal. Abrí la app una vez con señal y probá de nuevo.');
+    if (khabBloqueado()) return khabAvisarBloqueado();
     const a = await ask('¿Enviar el informe?', 'Se envía el informe completo a la compu principal, donde lo bajan en PDF.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Enviar', kind: 'primary' }]);
     if (a !== 'si') return;
     fmt = 'central';
@@ -2154,6 +2155,7 @@ async function guardarPlanilla(sh) {
   if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
   if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
   if (!FB_OK) return toast('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
+  if (khabBloqueado()) return khabAvisarBloqueado();
   const prev = S.guardadas && S.guardadas[sh.id];
   const corrige = prev && prev.corrigiendo && prev.env ? prev.env : null;
   const ahora = SU && SU_FECHA ? { fecha: SU_FECHA, seg: '00' } : stampOf(new Date());
@@ -2243,12 +2245,22 @@ async function khabPreparar() {
 function khabConsultar() {
   FDB.collection('dispositivos').doc(KHAB.uid).get().then(doc => {
     if (doc.exists) {
-      KHAB.estado = 'habilitado'; lsSet('hab_ok', KHAB.uid);
       const d = doc.data();
+      KHAB.estado = d.pausado === true ? 'pausado' : 'habilitado'; lsSet('hab_ok', KHAB.uid);
       if (!d.ultimoUso || Date.now() - d.ultimoUso > 20 * 3600e3) FDB.collection('dispositivos').doc(KHAB.uid).update({ ultimoUso: Date.now(), app: 'kti' }).catch(() => {});
     } else if (!doc.metadata || !doc.metadata.fromCache) { KHAB.estado = 'no'; lsSet('hab_ok', ''); }
     khabBanner();
   }).catch(e => { if (e && e.code === 'permission-denied') { KHAB.estado = 'no'; lsSet('hab_ok', ''); } khabBanner(); });
+}
+// sin habilitar o en pausa: no se deja guardar ni enviar (aviso claro en vez de "enviar" y que se pierda)
+const khabBloqueado = () => KHAB.estado === 'no' || KHAB.estado === 'pausado';
+function khabTextoBloqueado() {
+  return KHAB.estado === 'pausado'
+    ? khabEste() + ' está en pausa: por ahora no puede guardar ni enviar planillas. Hablá con el encargado para que lo reactive.'
+    : khabEste() + ' no está ' + khabHabilitado() + ', así que no puede guardar ni enviar planillas. Pedile el código al encargado y escribilo en el cartel de arriba. Lo que cargaste sigue acá, no se borró.';
+}
+function khabAvisarBloqueado() {
+  ask(KHAB.estado === 'pausado' ? 'Dispositivo en pausa' : 'Dispositivo sin habilitar', khabTextoBloqueado(), [{ id: 'ok', label: 'Entendido', kind: 'primary' }]);
 }
 function khabMsg(msg, info) {
   if (msg && !info && !document.getElementById('khabMsg') && KHAB.estado !== 'habilitado') { KHAB.estado = 'no'; khabBanner(); }
@@ -2284,14 +2296,23 @@ async function khabRegistrar(codigo) {
 }
 function khabBanner() {
   let el = document.getElementById('khabBanner');
-  if (KHAB.estado !== 'no') { if (el) el.remove(); return; }
-  if (el) return;
+  if (KHAB.estado !== 'no' && KHAB.estado !== 'pausado') { if (el) el.remove(); return; }
+  if (el && el.dataset.estado === KHAB.estado) return;
+  if (el) el.remove();
+  if (KHAB.estado === 'pausado') {
+    el = h('div', { id: 'khabBanner', class: 'khab', 'data-estado': 'pausado' },
+      h('b', null, khabEste() + ' está en pausa.'),
+      h('span', null, 'Por ahora no puede ver datos nuevos ni guardar planillas. Para volver a usar la app, hablá con el encargado para que lo reactive.'));
+    const m = document.getElementById('main');
+    m.parentNode.insertBefore(el, m);
+    return;
+  }
   const inp = h('input', { class: 'txt', id: 'khabCodigo', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', maxlength: '12', placeholder: 'Código (ej: K7P4QX)', 'aria-label': 'Código de habilitación' });
   const btn = h('button', { class: 'btn primary', type: 'button' }, 'Habilitar');
   const go = async () => { btn.disabled = true; await khabRegistrar(inp.value); btn.disabled = false; };
   btn.addEventListener('click', go);
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
-  el = h('div', { id: 'khabBanner', class: 'khab' },
+  el = h('div', { id: 'khabBanner', class: 'khab', 'data-estado': 'no' },
     h('b', null, khabEste() + ' todavía no está ' + khabHabilitado() + '.'),
     h('span', null, 'Escribí el código que te pasó el encargado (se pone una sola vez; sirve también para la app Pozos):'),
     h('div', { class: 'khab-row' }, inp, btn),
@@ -2405,7 +2426,7 @@ function stateDe(sh) {
   return st;
 }
 function enviarCentral(tipo, st, extra) {
-  if (!FB_OK) return null;
+  if (!FB_OK || khabBloqueado()) return null;
   try {
     const { json, fotos } = packState(st);
     const ref = FDB.collection(KTI_COL).doc();
