@@ -4,8 +4,8 @@ const APP = ['./', './index.html', './manifest.json', './icon-192.png', './icon-
 // Lo de afuera que la app necesita para abrir y guardar sin señal (Firebase, letra, Excel)
 const EXT = [
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
   'https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js'
 ];

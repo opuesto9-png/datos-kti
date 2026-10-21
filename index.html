@@ -129,6 +129,25 @@ main { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
 .subar .sul { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
 .subar .sufecha { min-width: 210px; color-scheme: dark; }
 .suerr { color: #FF8A80; min-height: 1.2em; margin: 6px 0 0; font-weight: 600; }
+.fsdlg { position: fixed; inset: 0; z-index: 9000; background: rgba(4,14,22,.92); display: flex; align-items: center; justify-content: center; padding: 18px; }
+#nuevaVer { z-index: 9500; }
+.fs-card { width: 100%; max-width: 420px; background: var(--card, #12324A); border: 2px solid #6FC9B0; border-radius: 16px; padding: 24px 20px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); display: flex; flex-direction: column; gap: 12px; }
+.fs-card h2 { margin: 0; font: 700 22px/1.15 var(--head); }
+.fs-card p { margin: 0 0 4px; color: #BFD3DC; font-size: 15px; line-height: 1.4; }
+.fs-card .txt { text-align: center; font-size: 18px; }
+.fs-card .btn.big { width: 100%; height: 50px; font-size: 17px; font-weight: 800; }
+.fs-ic { width: 56px; height: 56px; margin: 0 auto; border-radius: 50%; background: #123B34; color: #6FC9B0; display: flex; align-items: center; justify-content: center; }
+#habLock .fs-card { border-color: #c98a2b; }
+.hab-msg { min-height: 1.2em; color: #FF8A80; font-weight: 600; font-size: 14px; }
+.hab-msg.info { color: #6FC9B0; }
+.nd-cambiar { display: block; width: 100%; margin-top: 8px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: transparent; color: inherit; font-size: 14px; text-align: left; }
+.stbar { border-top: 1px solid rgba(255,255,255,.08); }
+.stbar .stwrap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 5px 14px 7px; max-width: 720px; margin: 0 auto; }
+body.pcx .stbar .stwrap { max-width: 1040px; }
+.conn-badge { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: .02em; }
+.conn-badge.online { background: #24391f; color: #a6d9a0; }
+.conn-badge.offline { background: #3a201d; color: #e6a49d; }
+.operador-tag { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,.18); background: transparent; color: var(--onnavy, #fff); }
 .nuevaver { position: fixed; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 10px 12px 10px 16px; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 600; box-shadow: 0 8px 28px rgba(0,0,0,.4); }
 .nuevaver .btn { background: #fff; color: var(--primary); border-color: #fff; min-height: 40px; }
 .xlavisos { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding: 10px 14px; border: 1px dashed var(--rule); border-radius: 10px; color: var(--ink2); font-size: 14.5px; }
@@ -353,12 +372,6 @@ body.has-bb #toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   .btn:active, .aitem:active, .hturno:active, .nd-quick button:active, .segb:active, .menubtn:active { transform: none; }
   .acc-body { animation: none; }
 }
-.khab { max-width: 760px; margin: 12px auto 0; padding: 14px 16px; border-radius: 12px; background: #3a2a10; border: 1px solid #c98a2b; color: #f3dcb2; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
-.khab b { color: #ffd48a; font-size: 16px; }
-.khab-row { display: flex; gap: 8px; }
-.khab-row .txt { flex: 1; letter-spacing: .08em; }
-.khab-msg { margin: 0; font-size: 14px; color: #ffb4a8; }
-.khab-msg.info { color: var(--ink2); }
 </style>
 </head>
 <body>
@@ -369,8 +382,8 @@ body.has-bb #toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 <div id="navdrawer"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script>
 (function () {
 'use strict';
@@ -1511,6 +1524,8 @@ function buildDrawer() {
   const pc = !esMovil();
   if (modoCarga()) head.append(h('button', { class: 'nd-op', type: 'button', onclick: () => menuGo({ name: 'turno' }) },
     opLabel, h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
+  else if (opSet) head.append(h('div', { class: 'nd-op' }, h('span', null, 'La está usando: ', h('b', null, S.operador.trim()))));
+  head.append(h('button', { class: 'nd-cambiar', type: 'button', onclick: cambiarOperador }, 'Cambiar de operador (cerrar sesión)'));
   const quick = h('div', { class: 'nd-quick' },
     pc ? quickBtn('doc', 'Planillas Excel', () => menuGo({ name: 'home' })) : quickBtn('plus', 'Nuevo informe', () => { closeMenu(); nuevo(); }),
     pc ? null : quickBtn('clock', 'Historial', () => menuGo({ name: 'hist' })));
@@ -1556,9 +1571,19 @@ function renderTop() {
     if (sh && sh.kind === 'form') w.append(h('span', { class: 'prog', id: 'prog', 'aria-label': 'Campos completos' }, progText(sh)));
     w.append(menuIcon(menuOpen));
   }
-  $('#topbar').replaceChildren(w);
+  $('#topbar').replaceChildren(w, barraEstado());
   syncMenuUI();
 }
+// Igual que Pozos: marca de conexión y quién la está usando, siempre a la vista debajo del título
+function barraEstado() {
+  const on = navigator.onLine !== false;
+  const op = S && (S.operador || '').trim();
+  return h('div', { class: 'stbar', id: 'stbar' }, h('div', { class: 'stwrap' },
+    h('span', { class: 'conn-badge ' + (on ? 'online' : 'offline'), id: 'connBadge' },
+      on ? '● Conectado' : '● Sin conexión — se envía al volver la señal'),
+    op ? h('button', { class: 'operador-tag', type: 'button', onclick: () => cambiarOperador(), title: 'Cambiar de operador' }, 'Operador: ' + op + ' (cambiar)') : null));
+}
+function pintarBarraEstado() { const el = document.getElementById('stbar'); if (el) el.replaceWith(barraEstado()); }
 function renderBottom() {
   const el = $('#bottombar'), home = false; // los botones de informe pasaron al menú
   el.hidden = !home;
@@ -2009,7 +2034,6 @@ async function generar() {
   let fmt;
   if (esMovil()) {
     if (!FB_OK) return toast('Sin conexión con la compu principal. Abrí la app una vez con señal y probá de nuevo.');
-    if (khabBloqueado()) return khabAvisarBloqueado();
     const a = await ask('¿Enviar el informe?', 'Se envía el informe completo a la compu principal, donde lo bajan en PDF.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Enviar', kind: 'primary' }]);
     if (a !== 'si') return;
     fmt = 'central';
@@ -2154,8 +2178,9 @@ function driveTitle(sh, ahora, conSeg) {
 async function guardarPlanilla(sh) {
   if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
   if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
+  if (habBloqueado()) return habPintar();
+  if (!HAB.listo) return toast('Conectando… probá de nuevo en unos segundos.');
   if (!FB_OK) return toast('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
-  if (khabBloqueado()) return khabAvisarBloqueado();
   const prev = S.guardadas && S.guardadas[sh.id];
   const corrige = prev && prev.corrigiendo && prev.env ? prev.env : null;
   const ahora = SU && SU_FECHA ? { fecha: SU_FECHA, seg: '00' } : stampOf(new Date());
@@ -2188,18 +2213,18 @@ function cancelarCorreccion(sh) {
 /* ---------- Compu principal: los celulares envían planillas e informes por Firebase (mismo proyecto que Pozos) ---------- */
 const FB_CONFIG = { apiKey: 'AIzaSyBYgPZ48U1Oei6FtWmaruXgfmvgyKRHBJs', authDomain: 'pozos-centenario.firebaseapp.com', projectId: 'pozos-centenario', storageBucket: 'pozos-centenario.firebasestorage.app', messagingSenderId: '1016276574997', appId: '1:1016276574997:web:a5769cb155c9647888ff1c' };
 const KTI_COL = 'kti_envios', KTI_FOTOS = 'kti_fotos';
-let FDB = null, FB_OK = false, AUTH_KTI = null, AUTH_DEF = null;
+let FDB = null, FB_OK = false, AUTH_DEF = null, AUTH_KTI = null;
 try {
   if (typeof firebase !== 'undefined') {
-    // identificación del dispositivo compartida con Pozos (la app "por defecto" es la misma que usa Pozos)
-    try {
-      const def = (firebase.apps || []).find(a => a.name === '[DEFAULT]') || firebase.initializeApp(FB_CONFIG);
-      AUTH_DEF = typeof def.auth === 'function' ? def.auth() : null;
-    } catch (e) { AUTH_DEF = null; }
     // app con nombre propio: así no comparte la caché local con Pozos (mismo dominio)
     const app = firebase.initializeApp(FB_CONFIG, 'datoskti');
-    // auth antes que firestore: la base espera a saber quién es el dispositivo antes de conectarse
-    try { AUTH_KTI = typeof app.auth === 'function' ? app.auth() : null; } catch (e) { AUTH_KTI = null; }
+    // identidad del dispositivo: la misma que usa Pozos (app por defecto), así la habilitación vale para las dos
+    try {
+      if (typeof firebase.auth === 'function') {
+        const def = firebase.apps.find(a => a.name === '[DEFAULT]') || firebase.initializeApp(FB_CONFIG);
+        AUTH_DEF = def.auth(); AUTH_KTI = app.auth();
+      }
+    } catch (e) { AUTH_DEF = AUTH_KTI = null; }
     FDB = app.firestore();
     try { FDB.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
     FB_OK = true;
@@ -2208,119 +2233,6 @@ try {
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function esMovil() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
-/* ---- Habilitación del dispositivo (misma que Pozos: mismo dominio y mismo proyecto de Firebase) ----
-   Cada celular/compu se identifica sola con Firebase (usuario anónimo) y queda habilitada UNA vez con un
-   código de un solo uso que se genera en la app Pozos (compu principal → "Dispositivos"). Si el celular ya
-   está habilitado en Pozos, acá no hay que hacer nada: se usa la misma identificación. */
-const KHAB = { uid: null, estado: 'cargando' };
-const khabNorm = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-const khabEste = () => esMovil() ? 'Este celular' : 'Esta compu';
-const khabHabilitado = () => esMovil() ? 'habilitado' : 'habilitada';
-function khabInicial(auth) {
-  return new Promise(res => { let ok = false; const fin = u => { if (!ok) { ok = true; res(u || null); } }; setTimeout(() => fin(auth.currentUser), 4000); const off = auth.onAuthStateChanged(u => { off(); fin(u); }); });
-}
-async function khabPreparar() {
-  if (!FB_OK || !AUTH_KTI || !AUTH_DEF) { KHAB.estado = 'sin-auth'; return; }
-  try {
-    const [uDef, uKti] = await Promise.all([khabInicial(AUTH_DEF), khabInicial(AUTH_KTI)]);
-    let u = uDef || uKti;
-    if (!u) {
-      // nunca se identificó (ni acá ni en Pozos): se identifica ahora (necesita señal la primera vez)
-      try { u = (await AUTH_DEF.signInAnonymously()).user; } catch (e) { console.warn('No se pudo identificar el dispositivo', e); }
-    }
-    if (!u) { KHAB.estado = 'sin-auth'; return; }
-    // las dos "sesiones" (la compartida con Pozos y la de Datos KTI) quedan con el mismo usuario
-    if (!AUTH_KTI.currentUser || AUTH_KTI.currentUser.uid !== u.uid) { try { await AUTH_KTI.updateCurrentUser(u); } catch (e) { console.warn(e); } }
-    if (!AUTH_DEF.currentUser || AUTH_DEF.currentUser.uid !== u.uid) { try { await AUTH_DEF.updateCurrentUser(u); } catch (e) { console.warn(e); } }
-    KHAB.uid = (AUTH_KTI.currentUser || u).uid;
-    if (lsGet('hab_ok', '') === KHAB.uid) KHAB.estado = 'habilitado';
-    khabConsultar();
-    const cod = khabNorm(new URLSearchParams(location.search).get('equipo'));
-    if (cod) {
-      try { history.replaceState(history.state, '', location.pathname + location.hash); } catch (e) {}
-      if (KHAB.estado !== 'habilitado') khabRegistrar(cod);
-    }
-  } catch (e) { console.error(e); }
-}
-function khabConsultar() {
-  FDB.collection('dispositivos').doc(KHAB.uid).get().then(doc => {
-    if (doc.exists) {
-      const d = doc.data();
-      KHAB.estado = d.pausado === true ? 'pausado' : 'habilitado'; lsSet('hab_ok', KHAB.uid);
-      if (!d.ultimoUso || Date.now() - d.ultimoUso > 20 * 3600e3) FDB.collection('dispositivos').doc(KHAB.uid).update({ ultimoUso: Date.now(), app: 'kti' }).catch(() => {});
-    } else if (!doc.metadata || !doc.metadata.fromCache) { KHAB.estado = 'no'; lsSet('hab_ok', ''); }
-    khabBanner();
-  }).catch(e => { if (e && e.code === 'permission-denied') { KHAB.estado = 'no'; lsSet('hab_ok', ''); } khabBanner(); });
-}
-// sin habilitar o en pausa: no se deja guardar ni enviar (aviso claro en vez de "enviar" y que se pierda)
-const khabBloqueado = () => KHAB.estado === 'no' || KHAB.estado === 'pausado';
-function khabTextoBloqueado() {
-  return KHAB.estado === 'pausado'
-    ? khabEste() + ' está en pausa: por ahora no puede guardar ni enviar planillas. Hablá con el encargado para que lo reactive.'
-    : khabEste() + ' no está ' + khabHabilitado() + ', así que no puede guardar ni enviar planillas. Pedile el código al encargado y escribilo en el cartel de arriba. Lo que cargaste sigue acá, no se borró.';
-}
-function khabAvisarBloqueado() {
-  ask(KHAB.estado === 'pausado' ? 'Dispositivo en pausa' : 'Dispositivo sin habilitar', khabTextoBloqueado(), [{ id: 'ok', label: 'Entendido', kind: 'primary' }]);
-}
-function khabMsg(msg, info) {
-  if (msg && !info && !document.getElementById('khabMsg') && KHAB.estado !== 'habilitado') { KHAB.estado = 'no'; khabBanner(); }
-  const el = document.getElementById('khabMsg');
-  if (el) { el.textContent = msg; el.className = 'khab-msg' + (info ? ' info' : ''); el.hidden = !msg; }
-  return msg;
-}
-async function khabRegistrar(codigo) {
-  codigo = khabNorm(codigo);
-  if (!KHAB.uid) return khabMsg('Este dispositivo todavía no se pudo identificar (falta señal). Probá de nuevo con señal.');
-  if (codigo.length < 4) return khabMsg('Ese código no es válido.');
-  const invRef = FDB.collection('invitaciones').doc(codigo), devRef = FDB.collection('dispositivos').doc(KHAB.uid);
-  khabMsg('Habilitando…', true);
-  try {
-    const inv = await invRef.get({ source: 'server' });
-    if (!inv.exists) return khabMsg('Ese código no existe. Revisá que esté bien escrito.');
-    const d = inv.data();
-    if (d.usado && d.usadoPor !== KHAB.uid) return khabMsg('Ese código ya fue usado en otro dispositivo. Pedile uno nuevo al encargado.');
-    const b = FDB.batch();
-    if (!d.usado) b.update(invRef, { usado: true, usadoPor: KHAB.uid, usadoTs: Date.now() });
-    b.set(devRef, { codigo, nombre: d.nombre || '', admin: d.admin === true, tipo: esMovil() ? 'celular' : 'compu', app: 'kti', creadoTs: Date.now(), ultimoUso: Date.now(), agente: String(navigator.userAgent || '').slice(0, 150) });
-    await b.commit();
-    lsSet('hab_ok', KHAB.uid);
-    alert('¡Listo! ' + khabEste() + ' quedó ' + khabHabilitado() + (d.nombre ? ' (' + d.nombre + ')' : '') + '.');
-    location.reload();
-    return '';
-  } catch (e) {
-    console.error(e);
-    if (e && e.code === 'unavailable') return khabMsg('No hay señal. Probá de nuevo cuando tengas internet.');
-    if (e && e.code === 'permission-denied') return khabMsg('Ese código ya fue usado o no es válido. Pedile uno nuevo al encargado.');
-    return khabMsg('No se pudo habilitar (' + ((e && e.message) || e) + ').');
-  }
-}
-function khabBanner() {
-  let el = document.getElementById('khabBanner');
-  if (KHAB.estado !== 'no' && KHAB.estado !== 'pausado') { if (el) el.remove(); return; }
-  if (el && el.dataset.estado === KHAB.estado) return;
-  if (el) el.remove();
-  if (KHAB.estado === 'pausado') {
-    el = h('div', { id: 'khabBanner', class: 'khab', 'data-estado': 'pausado' },
-      h('b', null, khabEste() + ' está en pausa.'),
-      h('span', null, 'Por ahora no puede ver datos nuevos ni guardar planillas. Para volver a usar la app, hablá con el encargado para que lo reactive.'));
-    const m = document.getElementById('main');
-    m.parentNode.insertBefore(el, m);
-    return;
-  }
-  const inp = h('input', { class: 'txt', id: 'khabCodigo', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', maxlength: '12', placeholder: 'Código (ej: K7P4QX)', 'aria-label': 'Código de habilitación' });
-  const btn = h('button', { class: 'btn primary', type: 'button' }, 'Habilitar');
-  const go = async () => { btn.disabled = true; await khabRegistrar(inp.value); btn.disabled = false; };
-  btn.addEventListener('click', go);
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
-  el = h('div', { id: 'khabBanner', class: 'khab', 'data-estado': 'no' },
-    h('b', null, khabEste() + ' todavía no está ' + khabHabilitado() + '.'),
-    h('span', null, 'Escribí el código que te pasó el encargado (se pone una sola vez; sirve también para la app Pozos):'),
-    h('div', { class: 'khab-row' }, inp, btn),
-    h('p', { id: 'khabMsg', class: 'khab-msg', hidden: true }));
-  const main = document.getElementById('main');
-  main.parentNode.insertBefore(el, main);
-}
-const KHAB_LISTO = khabPreparar().catch(() => {});
 /* ---- Super usuario (oculto): en la compu habilita cargar planillas cuando falla un celular en campo ---- */
 // Se entra tocando 5 veces el título "Datos KTI" en la compu. Se guarda solo la huella de la clave.
 const SU_HASH = 'fb5d3e59f9b23fa7f69cb75f6904c0e3e2142e384a2311b3ccd074adbc746573';
@@ -2375,29 +2287,210 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-18b';
+const APP_VER = '2026-10-21b';
+// Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
+// un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
+let VER_NUEVA = '';
 async function chequearVersion() {
+  if (navigator.onLine === false || document.getElementById('nuevaVer')) return;
   try {
     const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text();
     const m = /const APP_VER = '([^']+)'/.exec(t);
-    if (m && m[1] !== APP_VER && !document.getElementById('nuevaVer')) {
-      document.body.append(h('div', { id: 'nuevaVer', class: 'nuevaver' }, h('span', null, 'Hay una versión nueva de la app.'),
-        h('button', { class: 'btn small primary', type: 'button', onclick: () => location.reload() }, 'Actualizar')));
-    }
+    if (m && m[1] > APP_VER) { VER_NUEVA = m[1]; mostrarActualizar(); }
   } catch (e) {}
 }
+function mostrarActualizar() {
+  if (!VER_NUEVA || document.getElementById('nuevaVer')) return;
+  // si hay un diálogo abierto (clave, confirmación, Excel armándose) espera a que se cierre
+  if (document.querySelector('.ovl')) { setTimeout(mostrarActualizar, 3000); return; }
+  const btn = h('button', { class: 'btn primary big', type: 'button' }, 'Actualizar');
+  btn.onclick = async () => {
+    btn.textContent = 'Actualizando…'; btn.disabled = true;
+    try { if (saveT) await save(); } catch (e) {}
+    const recargar = () => location.reload();
+    setTimeout(recargar, 2500);
+    try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) {}
+    recargar();
+  };
+  const ic = h('div', { class: 'fs-ic' }); ic.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>';
+  document.body.append(h('div', { id: 'nuevaVer', class: 'fsdlg', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Versión nueva' },
+    h('div', { class: 'fs-card' }, ic, h('h2', null, 'Hay una versión nueva'),
+      h('p', null, 'La app se actualizó con mejoras. Tocá Actualizar para seguir usándola; lo que ya cargaste queda guardado.'), btn)));
+  btn.focus();
+}
 setTimeout(chequearVersion, 4000);
+window.addEventListener('online', () => setTimeout(chequearVersion, 1500));
 // Cartel de sin señal: la app sigue andando, lo guardado sale solo cuando vuelve
+let estabaSinSenal = false;
 function pintarSenal() {
-  let el = document.getElementById('sinSenal');
-  if (navigator.onLine === false) {
-    if (!el) document.body.append(h('div', { id: 'sinSenal', class: 'sinsenal' }, 'Sin señal · lo que guardes se envía al volver'));
-  } else if (el) { el.remove(); toast('Volvió la señal. Enviando lo guardado…'); }
+  pintarBarraEstado();
+  if (navigator.onLine === false) estabaSinSenal = true;
+  else if (estabaSinSenal) { estabaSinSenal = false; toast('Volvió la señal. Enviando lo guardado…'); }
 }
 window.addEventListener('online', pintarSenal); window.addEventListener('offline', pintarSenal);
 setTimeout(pintarSenal, 500);
-setInterval(chequearVersion, 10 * 60 * 1000);
+setInterval(chequearVersion, 5 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) chequearVersion(); });
+
+/* ---------- Habilitación de dispositivos y quién la está usando (igual que Pozos, la misma para las dos apps) ----------
+   Cada celular/compu se identifica sola (usuario anónimo de Firebase). Si ya está habilitada en Pozos, acá
+   también. Si no, pide el código de un solo uso que genera la compu principal desde Pozos → Dispositivos. */
+const HAB = { uid: null, estado: 'cargando', admin: false, nombre: '', listo: false, registrando: false };
+const HAB_APP = 'datos-kti';
+const habEste = () => esMovil() ? 'Este celular' : 'Esta compu';
+const habHabTxt = () => esMovil() ? 'habilitado' : 'habilitada';
+const habNorm = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const habBloqueado = () => HAB.estado === 'no' || HAB.estado === 'pausado';
+function primerUsuario(auth, ms) {
+  return new Promise(res => {
+    let ok = false; const fin = u => { if (!ok) { ok = true; res(u || null); } };
+    setTimeout(() => fin(auth.currentUser), ms);
+    const off = auth.onAuthStateChanged(u => { off(); fin(u); });
+  });
+}
+async function habUsuario() {
+  let u = await primerUsuario(AUTH_DEF, 4000);
+  if (!u) { try { u = (await AUTH_DEF.signInAnonymously()).user; } catch (e) { console.warn('No se pudo identificar el dispositivo', e); u = null; } }
+  return u;
+}
+let habListo; const HAB_LISTO = new Promise(r => { habListo = r; });
+async function habPreparar() {
+  try {
+    if (!FB_OK || !AUTH_DEF || !AUTH_KTI) { HAB.estado = 'sin-auth'; return; }
+    const u = await habUsuario();
+    if (!u) { HAB.estado = 'sin-auth'; return; }
+    HAB.uid = u.uid;
+    try {
+      const k = await primerUsuario(AUTH_KTI, 2000);
+      if (!k || k.uid !== u.uid) await AUTH_KTI.updateCurrentUser(u);
+    } catch (e) { console.warn('auth KTI', e); }
+    if (lsGet('hab_ok', '') === u.uid) HAB.estado = 'habilitado'; // sin señal confiamos en lo que ya sabíamos
+    const cod = habNorm(new URLSearchParams(location.search).get('equipo'));
+    if (cod) { try { history.replaceState(history.state, '', location.pathname + location.hash); } catch (e) {} }
+    habConsultar(cod);
+  } finally { HAB.listo = true; habListo(); habPintar(); }
+}
+function habConsultar(cod) {
+  if (!HAB.uid) return;
+  FDB.collection('dispositivos').doc(HAB.uid).get().then(doc => {
+    if (doc.exists) {
+      const d = doc.data();
+      HAB.estado = d.pausado === true ? 'pausado' : 'habilitado'; HAB.admin = d.admin === true; HAB.nombre = d.nombre || '';
+      lsSet('hab_ok', HAB.uid);
+      habLatido(true);
+      if (!d.ultimoUso || Date.now() - d.ultimoUso > 20 * 3600e3) FDB.collection('dispositivos').doc(HAB.uid).update({ ultimoUso: Date.now(), app: HAB_APP }).catch(() => {});
+    } else if (!doc.metadata || !doc.metadata.fromCache) {
+      HAB.estado = 'no'; HAB.admin = false; lsSet('hab_ok', '');
+      if (cod) habRegistrar(cod);
+    }
+    habPintar();
+  }).catch(err => {
+    if (err && err.code === 'permission-denied') { HAB.estado = 'no'; lsSet('hab_ok', ''); if (cod) habRegistrar(cod); }
+    habPintar();
+  });
+}
+function habMsg(t, info) { const el = document.getElementById('habMsg'); if (el) { el.textContent = t || ''; el.className = 'hab-msg' + (info ? ' info' : ''); } return t; }
+async function habRegistrar(codigo) {
+  codigo = habNorm(codigo);
+  if (!HAB.uid) return habMsg('Este dispositivo todavía no se pudo identificar (falta señal). Probá de nuevo con señal.');
+  if (codigo.length < 4) return habMsg('Ese código no es válido.');
+  const invRef = FDB.collection('invitaciones').doc(codigo), devRef = FDB.collection('dispositivos').doc(HAB.uid);
+  habMsg('Habilitando…', true);
+  try {
+    const inv = await invRef.get({ source: 'server' });
+    if (!inv.exists) return habMsg('Ese código no existe. Revisá que esté bien escrito.');
+    const d = inv.data();
+    if (d.usado && d.usadoPor !== HAB.uid) return habMsg('Ese código ya fue usado en otro dispositivo. Pedile uno nuevo al encargado.');
+    const b = FDB.batch();
+    if (!d.usado) b.update(invRef, { usado: true, usadoPor: HAB.uid, usadoTs: Date.now() });
+    b.set(devRef, { codigo, nombre: d.nombre || '', admin: d.admin === true, tipo: esMovil() ? 'celular' : 'compu', app: HAB_APP,
+      creadoTs: Date.now(), ultimoUso: Date.now(), agente: String(navigator.userAgent || '').slice(0, 150) });
+    HAB.registrando = true;
+    await b.commit();
+    HAB.registrando = false;
+    lsSet('hab_ok', HAB.uid);
+    HAB.estado = 'habilitado'; HAB.admin = d.admin === true; HAB.nombre = d.nombre || '';
+    habMsg('¡Listo! ' + habEste() + ' quedó ' + habHabTxt() + '.', true);
+    setTimeout(() => location.reload(), 1200);
+    return '';
+  } catch (err) {
+    HAB.registrando = false; console.error('habRegistrar', err);
+    if (err && err.code === 'unavailable') return habMsg('No hay señal. Probá de nuevo cuando tengas internet.');
+    if (err && err.code === 'permission-denied') return habMsg('Ese código ya fue usado o no es válido. Pedile uno nuevo al encargado.');
+    return habMsg('No se pudo habilitar (' + ((err && err.message) || err) + ').');
+  }
+}
+// pantalla de bloqueo: sin habilitar o en pausa no se puede usar la app
+function habPintar() {
+  let el = document.getElementById('habLock');
+  if (!habBloqueado()) { if (el) el.remove(); pedirLogin(); return; }
+  if (el && el.dataset.estado === HAB.estado) return;
+  if (el) el.remove();
+  const lg = document.getElementById('loginDlg'); if (lg) lg.remove();
+  const card = h('div', { class: 'fs-card' });
+  if (HAB.estado === 'pausado') {
+    card.append(h('h2', null, habEste() + ' está en pausa'), h('p', null, 'Por ahora no puede usar la app. Hablá con el encargado para que lo reactive.'));
+  } else {
+    const inp = h('input', { class: 'txt', id: 'habCodigo', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', maxlength: '12', placeholder: 'Código (ej: K7P4QX)', 'aria-label': 'Código de habilitación' });
+    const btn = h('button', { class: 'btn primary big', type: 'button' }, 'Habilitar');
+    const ir = async () => { btn.disabled = true; await habRegistrar(inp.value); btn.disabled = false; };
+    btn.onclick = ir; inp.addEventListener('keydown', e => { if (e.key === 'Enter') ir(); });
+    card.append(h('h2', null, habEste() + ' no está ' + habHabTxt()),
+      h('p', null, 'Escribí el código que te pasó el encargado (se pone una sola vez). Si ya está habilitado en Pozos, abrí Pozos con señal y volvé.'),
+      inp, h('div', { id: 'habMsg', class: 'hab-msg' }), btn);
+    setTimeout(() => inp.focus(), 60);
+  }
+  el = h('div', { id: 'habLock', class: 'fsdlg', role: 'dialog', 'aria-modal': 'true', 'data-estado': HAB.estado }, card);
+  document.body.append(el);
+}
+// presencia: cada 5 min (con la app abierta) avisa quién la está usando; se ve en Pozos → Dispositivos
+let habUltLatido = 0;
+function habLatido(forzar) {
+  if (HAB.estado !== 'habilitado' || !HAB.uid || !FB_OK) return;
+  if (!forzar && (document.hidden || Date.now() - habUltLatido < 4 * 60e3)) return;
+  habUltLatido = Date.now();
+  FDB.collection('presencia').doc(HAB.uid).set({ operador: ((S && S.operador) || '').trim(), legajo: ((S && S.legajo) || '').trim(), ts: Date.now(), app: HAB_APP,
+    tipo: esMovil() ? 'celular' : 'compu', nombre: HAB.nombre || '', cerrada: false }, { merge: true }).catch(() => {});
+}
+setInterval(() => habLatido(false), 5 * 60e3);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { habLatido(true); return; }
+  if (HAB.estado === 'habilitado' && HAB.uid && FB_OK) { habUltLatido = 0; FDB.collection('presencia').doc(HAB.uid).set({ cerrada: true, ts: Date.now() }, { merge: true }).catch(() => {}); }
+});
+// login obligatorio: sin nombre y legajo no se puede usar la app
+function pedirLogin() {
+  if (!S || habBloqueado()) return;
+  let el = document.getElementById('loginDlg');
+  const falta = !(S.operador || '').trim() || !(S.legajo || '').trim();
+  if (!falta) { if (el) el.remove(); return; }
+  if (el) return;
+  const op = h('input', { class: 'txt', id: 'lgNombre', type: 'text', autocomplete: 'name', autocapitalize: 'words', placeholder: 'Nombre y apellido (ej: Juan Pérez)', 'aria-label': 'Nombre y apellido', value: S.operador || '' });
+  const lg = h('input', { class: 'txt', id: 'lgLegajo', type: 'text', inputmode: 'numeric', autocomplete: 'off', placeholder: 'Legajo', 'aria-label': 'Legajo', value: S.legajo || '' });
+  const err = h('div', { class: 'hab-msg' });
+  const ok = () => {
+    const n = op.value.trim(), l = lg.value.trim();
+    if (n.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '').length < 2) { err.textContent = 'Falta tu nombre para poder ingresar.'; op.focus(); return; }
+    if (!l) { err.textContent = 'Falta tu legajo.'; lg.focus(); return; }
+    S.operador = n; S.legajo = l; save();
+    el.remove(); render(true); habLatido(true); pintarBarraEstado();
+    toast('Hola ' + n.split(' ')[0] + '. Ya podés usar la app.');
+  };
+  op.addEventListener('keydown', e => { if (e.key === 'Enter') lg.focus(); });
+  lg.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); });
+  el = h('div', { id: 'loginDlg', class: 'fsdlg', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Ingresar' },
+    h('div', { class: 'fs-card' }, h('h2', null, '¡Hola! Logueate, por favor'),
+      h('p', null, 'Escribí tu nombre y legajo para empezar a usar la app. Así cada lectura que guardes queda con tu nombre.'),
+      op, lg, err, h('button', { class: 'btn primary big', type: 'button', onclick: ok }, 'Ingresar')));
+  document.body.append(el);
+  setTimeout(() => (op.value ? lg : op).focus(), 60);
+}
+async function cambiarOperador() {
+  const r = await ask('¿Cambiar de operador?', 'Se cierra la sesión de ' + ((S.operador || '').trim() || 'este operador') + ' en ' + habEste().toLowerCase() + '. Lo que esté cargado y sin guardar queda para el próximo.', [{ id: 'no', label: 'Cancelar' }, { id: 'si', label: 'Cambiar', kind: 'primary' }]);
+  if (r !== 'si') return;
+  S.operador = ''; S.legajo = ''; save();
+  menuOpen = false; go({ name: 'home' }, 'replace');
+  pedirLogin();
+}
 let BAJADOS = new Set();
 try { BAJADOS = new Set(JSON.parse(lsGet('kti_bajados', '[]')) || []); } catch (e) {}
 let RECIB = [], recibErr = '', recibUnsub = null, recibPrimera = true, recibListo = false;
@@ -2426,7 +2519,7 @@ function stateDe(sh) {
   return st;
 }
 function enviarCentral(tipo, st, extra) {
-  if (!FB_OK || khabBloqueado()) return null;
+  if (!FB_OK) return null;
   try {
     const { json, fotos } = packState(st);
     const ref = FDB.collection(KTI_COL).doc();
@@ -2434,8 +2527,6 @@ function enviarCentral(tipo, st, extra) {
     fotos.forEach((f, i) => b.set(FDB.collection(KTI_FOTOS).doc(ref.id + '_' + i), { envio: ref.id, i, d: f.d, w: f.w || 0, h: f.h || 0 }));
     b.set(ref, Object.assign({ tipo, operador: st.operador || '', legajo: st.legajo || '', fecha: st.fecha || '', estado: json, nFotos: fotos.length, clientTs: Date.now(), creado: firebase.firestore.FieldValue.serverTimestamp(), movil: esMovil() }, extra || {}));
     // con la caché activada, sin señal queda en cola y sale sola cuando vuelve la conexión
-    // con la caché activada, sin señal queda en cola y sale sola cuando vuelve la conexión
-    // (Firebase espera a saber quién es el dispositivo antes de mandarlo, así que no hace falta esperar acá)
     b.commit().catch(e => { console.error(e); toast('No se pudo enviar a la compu principal (' + (e.code || e.message) + ').'); });
     return ref.id;
   } catch (e) { console.error(e); return null; }
@@ -2568,7 +2659,6 @@ async function bajarAca(sh) {
   const res = await saveFile(blob, sh.carpeta + ' ' + ((g && g.titulo) || driveTitle(sh, stampOf(new Date()), false)));
   if (res === 'saved') toast('Se bajó el PDF de ' + sh.title + '.');
 }
-KHAB_LISTO.then(() => iniciarRecibidos());
 
 /* ---------- Planillas Excel por sección (solo en las compus) ---------- */
 const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
@@ -3294,7 +3384,8 @@ function xlIniciar() {
     pintarXL();
   }, e => console.error(e));
 }
-KHAB_LISTO.then(() => xlIniciar());
+habPreparar();
+HAB_LISTO.then(() => { iniciarRecibidos(); xlIniciar(); });
 
 /* ---------- Historial ---------- */
 function histView() {
@@ -3360,6 +3451,7 @@ window.addEventListener('pagehide', () => { if (saveT) save(); });
   if (draft && !hasAnyData(S)) S.fecha = nowLocal();
   setStatus(!persist ? 'Este navegador no permite guardar el borrador' : draft && hasAnyData(S) ? 'Borrador recuperado' : '');
   render();
+  pedirLogin();
 })();
 
 })();
