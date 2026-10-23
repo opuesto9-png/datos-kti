@@ -2180,10 +2180,19 @@ function driveTitle(sh, ahora, conSeg) {
 
 async function guardarPlanilla(sh) {
   if (!S.operador.trim() || !S.legajo.trim()) return flashMissing();
-  if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
+  // los avisos que frenan el guardado son carteles con botón (no mensajitos que se van solos), para que nadie crea que se guardó
+  const frenar = t => ask('No se guardó ' + sh.title, t + ' Los datos siguen cargados en los campos.', [{ id: 'ok', label: 'Entendido', kind: 'primary' }]);
+  if (!sheetHasData(S, sh)) return frenar('Todavía no cargaste datos en esta planilla.');
   if (habBloqueado()) return habPintar();
-  if (!HAB.listo) return toast('Conectando… probá de nuevo en unos segundos.');
-  if (!FB_OK) return toast('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
+  if (!HAB.listo) {
+    // recién abierta: espera a que termine de identificarse en vez de rechazar el guardado
+    busy(true, 'Conectando…');
+    await Promise.race([HAB_LISTO, new Promise(r => setTimeout(r, 10000))]);
+    busy(false);
+    if (habBloqueado()) return habPintar();
+    if (!HAB.listo) return frenar('La app todavía se está conectando (señal débil). Esperá unos segundos y tocá Guardar de nuevo.');
+  }
+  if (!FB_OK) return frenar('Sin conexión con el guardado compartido. Abrí la app una vez con señal y probá de nuevo.');
   const prev = S.guardadas && S.guardadas[sh.id];
   const corrige = prev && prev.corrigiendo && prev.env ? prev.env : null;
   const ahora = SU && SU_FECHA ? { fecha: SU_FECHA, seg: '00' } : stampOf(new Date());
@@ -2303,7 +2312,7 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-23b';
+const APP_VER = '2026-10-23c';
 // Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
 // un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
 let VER_NUEVA = '';
