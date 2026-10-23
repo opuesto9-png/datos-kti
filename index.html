@@ -147,6 +147,8 @@ body.pcx .stbar .stwrap { max-width: 1040px; }
 .conn-badge { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: .02em; }
 .conn-badge.online { background: #24391f; color: #a6d9a0; }
 .conn-badge.offline { background: #3a201d; color: #e6a49d; }
+.conn-badge.fallidas { border: 1px solid #e6a49d; cursor: pointer; }
+.dlg p { white-space: pre-line; }
 .operador-tag { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,.18); background: transparent; color: var(--onnavy, #fff); }
 .nuevaver { position: fixed; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 10px 12px 10px 16px; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 600; box-shadow: 0 8px 28px rgba(0,0,0,.4); }
 .nuevaver .btn { background: #fff; color: var(--primary); border-color: #fff; min-height: 40px; }
@@ -1581,7 +1583,8 @@ function barraEstado() {
   return h('div', { class: 'stbar', id: 'stbar' }, h('div', { class: 'stwrap' },
     h('span', { class: 'conn-badge ' + (on ? 'online' : 'offline'), id: 'connBadge' },
       on ? '● Conectado' : '● Sin conexión — se envía al volver la señal'),
-    op ? h('button', { class: 'operador-tag', type: 'button', onclick: () => cambiarOperador(), title: 'Cambiar de operador' }, 'Operador: ' + op + ' (cambiar)') : null));
+    op ? h('button', { class: 'operador-tag', type: 'button', onclick: () => cambiarOperador(), title: 'Cambiar de operador' }, 'Operador: ' + op + ' (cambiar)') : null,
+    FALLIDAS.length ? h('button', { class: 'conn-badge offline fallidas', type: 'button', onclick: reintentarFallidas }, '⚠ ' + FALLIDAS.length + ' sin enviar · reintentar') : null));
 }
 function pintarBarraEstado() { const el = document.getElementById('stbar'); if (el) el.replaceWith(barraEstado()); }
 function renderBottom() {
@@ -2185,8 +2188,20 @@ async function guardarPlanilla(sh) {
   const corrige = prev && prev.corrigiendo && prev.env ? prev.env : null;
   const ahora = SU && SU_FECHA ? { fecha: SU_FECHA, seg: '00' } : stampOf(new Date());
   const title = driveTitle(sh, ahora, !!prev && prev.titulo === driveTitle(sh, ahora, false));
-  const env = enviarCentral('planilla', stateDe(sh), Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}, SU ? { su: true } : {}));
+  const st = stateDe(sh);
+  const extra = Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}, SU ? { su: true } : {});
+  const env = enviarCentral('planilla', st, extra);
   if (!env) return toast('No se pudo guardar. Probá de nuevo.');
+  busy(true, 'Guardando…');
+  const res = await esperarEnvio(env, navigator.onLine === false ? 300 : 7000);
+  busy(false);
+  if (res.error) {
+    // la base la rechazó: los datos quedan en los campos, no se borra nada
+    if (res.error.code === 'permission-denied') habConsultar();
+    await ask('No se pudo guardar ' + sh.title, motivoEnvio(res.error) + ' Los datos siguen cargados en los campos.', [{ id: 'ok', label: 'Entendido', kind: 'primary' }]);
+    return;
+  }
+  if (res.cola) ENVIOS[env].catch(e => { registrarFallida(sh, st, extra, e); reintentarFallidas(); });
   if (PRINCIPAL) marcarBajado([env]);
   (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', titulo: title, env };
   if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now() }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
@@ -2194,7 +2209,7 @@ async function guardarPlanilla(sh) {
   if (sh.kind === 'list') S[sh.id] = []; else delete S.v[sh.id];
   if (sh.photos) S[sh.photos.key] = [];
   touch(); render(true);
-  toast(navigator.onLine === false ? 'Sin señal: ' + sh.title + ' se guarda sola cuando vuelva la señal.' : sh.title + (corrige ? ' corregida.' : ' guardada. Campos listos para la próxima lectura.'));
+  toast(res.cola ? 'Sin señal o señal débil: ' + sh.title + ' quedó en ' + habEste().toLowerCase() + ' y se envía sola cuando haya señal.' : sh.title + (corrige ? ' corregida y enviada.' : ' guardada y enviada. Campos listos para la próxima lectura.'));
 }
 function corregirUltima(sh) {
   const g = S.guardadas && S.guardadas[sh.id], u = ULT[sh.id];
@@ -2232,6 +2247,7 @@ try {
 } catch (e) { console.error(e); FB_OK = false; }
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+function esIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 function esMovil() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
 /* ---- Super usuario (oculto): en la compu habilita cargar planillas cuando falla un celular en campo ---- */
 // Se entra tocando 5 veces el título "Datos KTI" en la compu. Se guarda solo la huella de la clave.
@@ -2287,7 +2303,7 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-21b';
+const APP_VER = '2026-10-23b';
 // Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
 // un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
 let VER_NUEVA = '';
@@ -2326,6 +2342,7 @@ function pintarSenal() {
   pintarBarraEstado();
   if (navigator.onLine === false) estabaSinSenal = true;
   else if (estabaSinSenal) { estabaSinSenal = false; toast('Volvió la señal. Enviando lo guardado…'); }
+  if (navigator.onLine !== false && FALLIDAS.length && HAB.estado === 'habilitado' && !document.querySelector('.ovl')) setTimeout(reintentarFallidas, 1500);
 }
 window.addEventListener('online', pintarSenal); window.addEventListener('offline', pintarSenal);
 setTimeout(pintarSenal, 500);
@@ -2436,7 +2453,7 @@ function habPintar() {
     const ir = async () => { btn.disabled = true; await habRegistrar(inp.value); btn.disabled = false; };
     btn.onclick = ir; inp.addEventListener('keydown', e => { if (e.key === 'Enter') ir(); });
     card.append(h('h2', null, habEste() + ' no está ' + habHabTxt()),
-      h('p', null, 'Escribí el código que te pasó el encargado (se pone una sola vez). Si ya está habilitado en Pozos, abrí Pozos con señal y volvé.'),
+      h('p', null, esIOS() ? 'En iPhone cada app del inicio se habilita por separado: aunque Pozos ya esté habilitado, Datos KTI necesita su propio código. Escribí el código que te pasó el encargado (se pone una sola vez).' : 'Escribí el código que te pasó el encargado (se pone una sola vez). Si ya está habilitado en Pozos, abrí Pozos con señal y volvé.'),
       inp, h('div', { id: 'habMsg', class: 'hab-msg' }), btn);
     setTimeout(() => inp.focus(), 60);
   }
@@ -2518,6 +2535,52 @@ function stateDe(sh) {
   st.guardadas = {};
   return st;
 }
+const ENVIOS = {};
+// por qué no se pudo guardar, en palabras del operador
+function motivoEnvio(e) {
+  const c = (e && e.code) || '';
+  if (c === 'permission-denied') return habEste() + ' no tiene permiso para guardar: no está habilitado, lo pausaron o todavía no se identificó. Abrí la app con señal; si sigue, pedile al encargado que lo revise en Pozos → Dispositivos.';
+  if (c === 'resource-exhausted') return 'La base de datos está saturada en este momento. Probá de nuevo en unos minutos.';
+  if (c === 'invalid-argument') return 'La planilla es demasiado grande para enviarla (¿muchas fotos?).';
+  if (c === 'unauthenticated') return habEste() + ' perdió la identificación. Cerrá y abrí la app con señal.';
+  return 'Error: ' + (c || (e && e.message) || 'desconocido') + '.';
+}
+// lecturas que la base rechazó: quedan acá hasta reintentar, así no se pierde ninguna
+let FALLIDAS = [];
+try { FALLIDAS = JSON.parse(lsGet('kti_fallidas', '[]')) || []; } catch (e) { FALLIDAS = []; }
+function guardarFallidas() { try { localStorage.setItem('kti_fallidas', JSON.stringify(FALLIDAS)); } catch (e) {} pintarBarraEstado(); }
+function registrarFallida(sh, st, extra, e) {
+  if (FALLIDAS.some(f => f.extra && f.extra.fechaPdf === extra.fechaPdf && f.sheetId === sh.id)) return;
+  FALLIDAS.push({ sheetId: sh.id, titulo: sh.title, st, extra, motivo: motivoEnvio(e), code: (e && e.code) || '', ts: Date.now() });
+  guardarFallidas();
+}
+async function reintentarFallidas() {
+  if (!FALLIDAS.length) return;
+  const lista = FALLIDAS.map(f => '• ' + f.titulo + ' de las ' + fmtHora(f.extra.fechaPdf)).join('\n');
+  const r = await ask('Lecturas sin enviar', 'Estas lecturas quedaron guardadas en ' + habEste().toLowerCase() + ' pero la base no las aceptó:\n' + lista + '\n\nMotivo: ' + FALLIDAS[FALLIDAS.length - 1].motivo,
+    [{ id: 'no', label: 'Más tarde' }, { id: 'si', label: 'Reintentar ahora', kind: 'primary' }]);
+  if (r !== 'si') return;
+  if (habBloqueado()) return habPintar();
+  busy(true, 'Enviando…');
+  const quedan = [];
+  for (const f of FALLIDAS) {
+    const id = enviarCentral('planilla', f.st, f.extra);
+    const res = id ? await esperarEnvio(id, 8000) : { error: { code: 'no-firebase' } };
+    if (res.error) { f.motivo = motivoEnvio(res.error); quedan.push(f); }
+    else if (PRINCIPAL) marcarBajado([id]);
+  }
+  busy(false);
+  const ok = FALLIDAS.length - quedan.length;
+  FALLIDAS = quedan; guardarFallidas();
+  if (!quedan.length) toast(ok === 1 ? 'Listo, la lectura se envió.' : 'Listo, se enviaron las ' + ok + ' lecturas.');
+  else await ask('No se pudieron enviar', (ok ? 'Se enviaron ' + ok + '. ' : '') + 'Faltan ' + quedan.length + '. ' + quedan[0].motivo, [{ id: 'ok', label: 'Entendido', kind: 'primary' }]);
+}
+// espera la confirmación de la base: {ok}, {error} o {cola} (sin respuesta a tiempo = sin señal, sale sola después)
+function esperarEnvio(id, ms) {
+  const p = ENVIOS[id];
+  if (!p) return Promise.resolve({ error: { code: 'no-firebase' } });
+  return Promise.race([p.then(() => ({ ok: true }), e => ({ error: e })), new Promise(r => setTimeout(() => r({ cola: true }), ms))]);
+}
 function enviarCentral(tipo, st, extra) {
   if (!FB_OK) return null;
   try {
@@ -2526,8 +2589,11 @@ function enviarCentral(tipo, st, extra) {
     const b = FDB.batch();
     fotos.forEach((f, i) => b.set(FDB.collection(KTI_FOTOS).doc(ref.id + '_' + i), { envio: ref.id, i, d: f.d, w: f.w || 0, h: f.h || 0 }));
     b.set(ref, Object.assign({ tipo, operador: st.operador || '', legajo: st.legajo || '', fecha: st.fecha || '', estado: json, nFotos: fotos.length, clientTs: Date.now(), creado: firebase.firestore.FieldValue.serverTimestamp(), movil: esMovil() }, extra || {}));
-    // con la caché activada, sin señal queda en cola y sale sola cuando vuelve la conexión
-    b.commit().catch(e => { console.error(e); toast('No se pudo enviar a la compu principal (' + (e.code || e.message) + ').'); });
+    // con la caché activada, sin señal queda en cola y sale sola cuando vuelve la conexión.
+    // La promesa queda guardada para que quien llamó sepa si llegó o si la base la rechazó.
+    const p = b.commit();
+    ENVIOS[ref.id] = p;
+    p.catch(e => console.error('envío rechazado', e && e.code, e));
     return ref.id;
   } catch (e) { console.error(e); return null; }
 }
