@@ -294,6 +294,14 @@ select.txt { appearance: auto; }
 .ring.borr .rval { stroke: #4FA3D9; }
 .borrbtn { margin-top: 8px; border-color: #4FA3D9; color: #9fd0f0; background: transparent; }
 .asub.borr { color: #7cc0ec; }
+.ini-version { text-align: center; font-size: 12.5px; color: var(--muted, #8aa); margin: 18px 0 4px; }
+.eqpanel { margin-top: 16px; }
+.eqrow { padding: 10px 0; border-top: 1px solid var(--rule, rgba(255,255,255,.1)); display: flex; flex-direction: column; gap: 2px; font-size: 14.5px; }
+.eqrow small { opacity: .7; }
+.eqon { color: #6FC9B0; font-weight: 700; }
+.eqver { font-size: 13px; font-weight: 600; }
+.eqver.ok { color: #6FC9B0; }
+.eqver.vieja { color: #F0B07A; }
 .btn.salirsg { background: transparent; border: 1px solid #c0524a; color: #f0b0a8; }
 .btn.small { min-height: 46px; padding: 0 14px; font-size: 16px; }
 .btn.wide { width: 100%; }
@@ -1563,7 +1571,7 @@ function buildDrawer() {
   const body = h('div', { class: 'nd-body' }, pc ? h('p', { class: 'nd-pcinfo' }, 'En la compu solo se bajan las planillas en Excel. La carga de datos se hace desde los celulares.') : GROUP_ORDER.map(groupBlock));
   const foot = h('div', { class: 'nd-foot' },
     (FB_OK && (!esMovil() || PRINCIPAL)) ? h('button', { class: 'nd-prin' + (PRINCIPAL ? ' on' : ''), type: 'button', onclick: togglePrincipal }, PRINCIPAL ? '★ Compu principal (tocar para sacar)' : 'Marcar esta compu como principal') : null,
-    'Datos KTI · Sistema interno de mantenimiento');
+    'Datos KTI · versión del ' + verFecha(APP_FECHA));
   $('#navdrawer').replaceChildren(head, quick, body, foot);
 }
 function syncMenuUI() {
@@ -1640,9 +1648,10 @@ function homeView() {
       h('span', { class: 'ht2' + (opSet ? '' : ' falta') }, opSet ? S.operador.trim() + (S.legajo && S.legajo.trim() ? ' · legajo ' + S.legajo.trim() : '') : 'Tocá para cargar operador y legajo')),
     h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
   document.body.classList.toggle('pcx', !modoCarga());
-  if (!esMovil() && !SU) return [hero, excelPanel()];
-  if (SU) return [hero, suBarra(), turno, ...GROUP_ORDER.map(accGroup), excelPanel()];
-  return [hero, turno, ...GROUP_ORDER.map(accGroup)];
+  const ver = h('p', { class: 'ini-version' }, 'Datos KTI · versión del ' + verFecha(APP_FECHA));
+  if (!esMovil() && !SU) return [hero, excelPanel(), equiposPanel(), ver];
+  if (SU) return [hero, suBarra(), turno, ...GROUP_ORDER.map(accGroup), excelPanel(), equiposPanel(), ver];
+  return [hero, turno, ...GROUP_ORDER.map(accGroup), ver];
 }
 function accGroup(g) {
   const items = SHEETS.filter(s => s.grp === g);
@@ -2374,7 +2383,10 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-25a';
+const APP_VER = '2026-10-25b';
+// fecha y hora de esta versión (AAAAMMDDhhmm): se muestra en el inicio y cada equipo la informa, para ver quién quedó con una vieja
+const APP_FECHA = 202610251020;
+function verFecha(v) { const t = String(v || ''); return t.length === 12 ? t.slice(6, 8) + '/' + t.slice(4, 6) + '/' + t.slice(0, 4) + ' ' + t.slice(8, 10) + ':' + t.slice(10, 12) : ''; }
 // Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
 // un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
 let VER_NUEVA = '';
@@ -2470,6 +2482,7 @@ function habConsultar(cod) {
       HAB.estado = d.pausado === true ? 'pausado' : 'habilitado'; HAB.admin = d.admin === true; HAB.nombre = d.nombre || '';
       lsSet('hab_ok', HAB.uid);
       habLatido(true);
+      if (!esMovil()) { equiposIniciar(); const el = document.getElementById('eqPanel'); if (el) el.replaceWith(equiposPanel()); }
       if (!d.ultimoUso || Date.now() - d.ultimoUso > 20 * 3600e3) FDB.collection('dispositivos').doc(HAB.uid).update({ ultimoUso: Date.now(), app: HAB_APP }).catch(() => {});
     } else if (!doc.metadata || !doc.metadata.fromCache) {
       HAB.estado = 'no'; HAB.admin = false; lsSet('hab_ok', '');
@@ -2542,7 +2555,7 @@ function habLatido(forzar) {
   if (!forzar && (document.hidden || Date.now() - habUltLatido < 4 * 60e3)) return;
   habUltLatido = Date.now();
   FDB.collection('presencia').doc(HAB.uid).set({ operador: ((S && S.operador) || '').trim(), legajo: ((S && S.legajo) || '').trim(), ts: Date.now(), app: HAB_APP,
-    tipo: esMovil() ? 'celular' : 'compu', nombre: HAB.nombre || '', cerrada: false }, { merge: true }).catch(() => {});
+    tipo: esMovil() ? 'celular' : 'compu', nombre: HAB.nombre || '', cerrada: false, verKti: APP_FECHA, iphone: esIOS() }, { merge: true }).catch(() => {});
 }
 setInterval(() => habLatido(false), 5 * 60e3);
 document.addEventListener('visibilitychange', () => {
@@ -3396,6 +3409,34 @@ function xlUltima(sc) {
   const d = new Date(ts), hoy = new Date();
   const dia = d.toDateString() === hoy.toDateString() ? 'hoy' : pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1);
   return 'Última lectura: ' + dia + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+let EQUIPOS = null, eqUnsub = null;
+function equiposIniciar() {
+  if (eqUnsub || !FB_OK || esMovil() || HAB.estado !== 'habilitado') return;
+  eqUnsub = FDB.collection('presencia').onSnapshot(snap => {
+    EQUIPOS = [];
+    snap.forEach(d => { const p = d.data() || {}; if (p.app === 'datos-kti' || p.verKti) EQUIPOS.push(Object.assign({ id: d.id }, p)); });
+    const el = document.getElementById('eqPanel'); if (el) el.replaceWith(equiposPanel());
+  }, () => { eqUnsub = null; });
+}
+setInterval(() => { const el = document.getElementById('eqPanel'); if (el) el.replaceWith(equiposPanel()); }, 60e3);
+function equiposPanel() {
+  equiposIniciar();
+  const l = (EQUIPOS || []).filter(p => p.ts && Date.now() - p.ts < 7 * 24 * 3600e3);
+  const enLinea = p => !p.cerrada && Date.now() - p.ts < 10 * 60e3;
+  l.sort((a, b) => (enLinea(b) - enLinea(a)) || (b.ts - a.ts));
+  const verTxt = p => p.verKti >= APP_FECHA ? h('span', { class: 'eqver ok' }, '✓ Última versión (' + verFecha(p.verKti) + ')')
+    : h('span', { class: 'eqver vieja' }, '⚠ Versión vieja' + (p.verKti ? ' (' + verFecha(p.verKti) + ')' : ' (anterior al 25/10/2026)') + ' · se actualiza sola al abrir la app con señal');
+  const filas = l.map(p => h('div', { class: 'eqrow' },
+    h('div', { class: 'eqn' }, h('b', null, p.operador || p.nombre || 'Sin nombre'), ' · ' + (p.tipo || '') + (p.iphone ? ' (iPhone)' : '') + (p.id === HAB.uid ? ' · esta compu' : ''),
+      enLinea(p) ? h('span', { class: 'eqon' }, ' ● en línea') : null),
+    verTxt(p),
+    h('small', null, (p.nombre && p.operador ? p.nombre + ' · ' : '') + (enLinea(p) ? 'activo ahora' : 'visto por última vez ' + fmtFecha(stampOf(new Date(p.ts)).fecha)))));
+  const viejos = l.filter(p => !(p.verKti >= APP_FECHA)).length;
+  return h('section', { class: 'xlpanel eqpanel', id: 'eqPanel' },
+    h('div', { class: 'xlph' }, h('div', null, h('h2', null, 'Equipos con Datos KTI'),
+      h('p', null, EQUIPOS === null ? 'Cargando…' : !l.length ? 'Ninguno en los últimos 7 días.' : l.length + ' en los últimos 7 días · ' + (viejos ? viejos + ' con versión vieja' : 'todos con la última versión')))),
+    filas);
 }
 function excelPanel() {
   const opts = [];
