@@ -291,6 +291,9 @@ select.txt { appearance: auto; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 18px; border: 1.5px solid var(--fieldb); border-radius: 10px; background: var(--sheet); color: var(--ink); font: 600 17px var(--body); }
 .btn.primary { background: var(--primary); border-color: var(--primary); color: var(--onprimary); }
 .btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.ring.borr .rval { stroke: #4FA3D9; }
+.borrbtn { margin-top: 8px; border-color: #4FA3D9; color: #9fd0f0; background: transparent; }
+.asub.borr { color: #7cc0ec; }
 .btn.salirsg { background: transparent; border: 1px solid #c0524a; color: #f0b0a8; }
 .btn.small { min-height: 46px; padding: 0 14px; font-size: 16px; }
 .btn.wide { width: 100%; }
@@ -1268,12 +1271,12 @@ const DB = (() => {
 
 /* ---------- Estado ---------- */
 function newState(perfil) {
-  return { id: uid(), fecha: nowLocal(), operador: (perfil && perfil.operador) || '', legajo: (perfil && perfil.legajo) || '', v: {}, equipos: [], cargas: [], fotosRci: [], guardadas: {} };
+  return { id: uid(), fecha: nowLocal(), operador: (perfil && perfil.operador) || '', legajo: (perfil && perfil.legajo) || '', v: {}, equipos: [], cargas: [], fotosRci: [], guardadas: {}, borr: {} };
 }
 function normState(st) {
   st.id = st.id || uid(); st.fecha = st.fecha || nowLocal();
   st.operador = st.operador || ''; st.legajo = st.legajo || '';
-  st.v = st.v || {}; st.equipos = st.equipos || []; st.cargas = st.cargas || []; st.fotosRci = st.fotosRci || []; st.guardadas = st.guardadas || {};
+  st.v = st.v || {}; st.equipos = st.equipos || []; st.cargas = st.cargas || []; st.fotosRci = st.fotosRci || []; st.guardadas = st.guardadas || {}; st.borr = st.borr || {};
   for (const id of Object.keys(st.v)) {
     const sh = BY[id];
     if (!sh || sh.kind !== 'form') { delete st.v[id]; continue; }
@@ -1513,6 +1516,11 @@ function itemIndicator(sh) {
   if (g && g.corrigiendo) return { html: ringSVG(100, 'chg'), sub: 'Corrigiendo la de las ' + fmtHora(g.fecha), cls: 'warn' };
   if (g && !s.n) return { html: ringSVG(100, 'done'), sub: 'Guardada ' + fmtHora(g.fecha) + ' · lista para la próxima', cls: 'ok' };
   if (!s.n) return { html: ringSVG(0, 'empty'), sub: 'Sin datos', cls: '' };
+  const b = S.borr && S.borr[sh.id];
+  if (b) {
+    const falt = camposFaltantes(sh);
+    return { html: ringSVG(pct, 'borr'), sub: 'Borrador ' + fmtHora(b.fecha) + (falt.length ? ' · faltan: ' + falt.slice(0, 2).map(nombreCampo).join(', ') + (falt.length > 2 ? ' y ' + (falt.length - 2) + ' más' : '') : ' · completa, falta Guardar'), cls: 'borr' };
+  }
   return { html: ringSVG(pct, ''), sub: s.n + '/' + s.total + ' campos · SIN GUARDAR', cls: 'warn' };
 }
 function assetRow(sh) {
@@ -1658,12 +1666,27 @@ function accItem(sh) {
 function refreshAccHead(sh) { const hd = $('#acc-h-' + sh.id); if (hd) hd.replaceChildren(...accHeadInner(sh)); }
 // ---- Datos sin guardar (igual que Pozos): si se cierra un equipo con datos cargados que todavía no se
 // guardaron, se pregunta antes. Los datos no se borran (quedan en el borrador), pero NO llegan a la compu.
-const sinGuardar = id => { const sh = id && BY[id]; return !!sh && sh.kind !== 'list' && sheetHasData(S, sh); };
+const sinGuardar = id => { const sh = id && BY[id]; return !!sh && sh.kind !== 'list' && sheetHasData(S, sh) && !(S.borr && S.borr[id]); };
+// ---- Borrador: queda en el celular para terminarla más tarde (ej. los datos de los recos que se toman en sala) ----
+function camposFaltantes(sh) {
+  const v = S.v[sh.id] || {};
+  return sh.groups.flatMap(g => g.f).filter(f => (f.t === 'n' || f.t === 's' || f.t === 'v' || f.t === 'c') && !(v[f.k] || (f.vk && v[f.vk]) || (f.ck && v[f.ck]) || (f.k2 && v[f.k2])));
+}
+const nombreCampo = f => String(f.l || f.k).replace(/\s+/g, ' ').trim();
+async function guardarBorrador(sh) {
+  if (!sheetHasData(S, sh)) return toast('Todavía no cargaste datos en esta planilla.');
+  (S.borr = S.borr || {})[sh.id] = { fecha: stampOf(new Date()).fecha };
+  save();
+  const falt = camposFaltantes(sh);
+  if (OPEN === sh.id) await toggleAcc(sh.id); else render(true);
+  toast('Borrador de ' + sh.title + ' guardado en ' + habEste().toLowerCase() + (falt.length ? '. Faltan ' + falt.length + ' dato' + (falt.length === 1 ? '' : 's') : '') + '. Cuando la completes, tocá Guardar para enviarla.');
+}
 async function confirmarSalir(id) {
   const sh = BY[id];
   const r = await ask('¿Salir sin guardar?', 'Cargaste datos en ' + sh.title + ' que todavía no se guardaron. Quedan anotados en ' + habEste().toLowerCase() + ', pero NO llegan a la compu hasta que toques Guardar.',
-    [{ id: 'guardar', label: 'Guardar ahora', kind: 'primary' }, { id: 'seguir', label: 'Seguir cargando' }, { id: 'salir', label: 'Salir sin guardar', kind: 'salirsg' }], { stack: true });
+    [{ id: 'guardar', label: 'Guardar y enviar ahora', kind: 'primary' }, { id: 'borr', label: 'Guardar como borrador (terminar después)' }, { id: 'seguir', label: 'Seguir cargando' }, { id: 'salir', label: 'Salir sin guardar', kind: 'salirsg' }], { stack: true });
   if (r === 'guardar') { await guardarPlanilla(sh); return !sinGuardar(id); }
+  if (r === 'borr') { (S.borr = S.borr || {})[id] = { fecha: stampOf(new Date()).fecha }; save(); toast('Borrador de ' + sh.title + ' guardado. Cuando la completes, tocá Guardar para enviarla.'); return true; }
   return r === 'salir';
 }
 let accEnHist = false, ignorarPop = false;
@@ -2115,6 +2138,8 @@ function firmaDe(sh) {
 }
 function destNodes(sh) {
   const g = S.guardadas && S.guardadas[sh.id];
+  const bo = S.borr && S.borr[sh.id];
+  if (bo && sheetHasData(S, sh)) { const fl = camposFaltantes(sh); return ['Borrador de las ' + fmtHora(bo.fecha) + ' (todavía no se envió). ' + (fl.length ? 'Faltan: ' + fl.map(nombreCampo).join(', ') + '.' : 'Ya está completa: tocá Guardar planilla para enviarla.')]; }
   if (g && g.corrigiendo) return ['Corrigiendo la lectura de las ' + fmtHora(g.fecha) + ': al guardar la reemplaza. ', h('button', { class: 'link', type: 'button', onclick: () => cancelarCorreccion(sh) }, 'Cancelar')];
   if (g) return ['Última lectura guardada ' + fmtHora(g.fecha) + '. ', ULT[sh.id] ? h('button', { class: 'link', type: 'button', onclick: () => corregirUltima(sh) }, 'Corregir esa lectura') : null];
   return [FB_OK ? 'Se guarda con la fecha y la hora, y queda para las planillas Excel.' : 'Sin conexión: abrí la app una vez con señal.'];
@@ -2132,6 +2157,7 @@ function paintDest() {
 function saveEl(sh, label) {
   return h('div', { class: 'savebox' },
     h('button', { class: 'btn primary wide', type: 'button', onclick: () => guardarPlanilla(sh) }, label || 'Guardar planilla'),
+    sh.kind === 'form' ? h('button', { class: 'btn wide borrbtn', type: 'button', onclick: () => guardarBorrador(sh) }, 'Guardar borrador (terminar después)') : null,
     h('p', { class: 'dest', id: 'dest' }, destNodes(sh)));
 }
 
@@ -2251,6 +2277,7 @@ async function guardarPlanilla(sh) {
   // campos en blanco para la próxima toma (la lectura anterior queda en gris como referencia)
   if (sh.kind === 'list') S[sh.id] = []; else delete S.v[sh.id];
   if (sh.photos) S[sh.photos.key] = [];
+  if (S.borr) delete S.borr[sh.id];
   touch(); render(true);
   toast(res.cola ? 'Sin señal o señal débil: ' + sh.title + ' quedó en ' + habEste().toLowerCase() + ' y se envía sola cuando haya señal.' : sh.title + (corrige ? ' corregida y enviada.' : ' guardada y enviada. Campos listos para la próxima lectura.'));
 }
@@ -2347,7 +2374,7 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-24a';
+const APP_VER = '2026-10-25a';
 // Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
 // un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
 let VER_NUEVA = '';
@@ -2580,7 +2607,7 @@ function stateDe(sh) {
   const st = clone(S);
   st.v = S.v[sh.id] ? { [sh.id]: clone(S.v[sh.id]) } : {};
   for (const k of ['equipos', 'cargas', 'fotosRci']) if (!((sh.kind === 'list' && k === sh.id) || (sh.photos && sh.photos.key === k))) st[k] = [];
-  st.guardadas = {};
+  st.guardadas = {}; st.borr = {};
   return st;
 }
 const ENVIOS = {};
