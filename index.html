@@ -558,30 +558,27 @@ const RC_GROUPS = [
 ];
 
 /* ---------- Recompresor RC#9 ---------- */
+// orden y nombres tal cual la planilla de papel del Recomp. N° 9 (Fluxus)
 const RC9_GROUPS = [
-  { t: 'Motor', f: [
-    num('rpm', 'R.P.M. motor'),
-    num('dp_ac_mot', 'Presión diferencial filtros aceite motor'),
-    num('p_ac_mot', 'Presión aceite motor'),
-    num('t_agua', 'Temperatura agua principal'),
-    num('t_ac_mot', 'Temperatura aceite motor'),
-  ] },
-  { t: 'Compresor', f: [
-    num('q_succ', 'Caudal de succión'),
-    num('p_succ', 'Presión succión compresor 1st'),
-    num('p_desc', 'Presión descarga compresor 1st'),
-    num('p_ac_comp', 'Presión aceite compresor'),
-    num('p_ac_ent', 'Presión aceite compresor entrada'),
-    num('p_ac_sal', 'Presión aceite compresor salida'),
-    num('t_succ', 'Temperatura succión compresor'),
-    num('t_d1', 'Temperatura descarga cilindro 1'),
-    num('t_d2', 'Temperatura descarga cilindro 2'),
-    num('t_ac_comp', 'Temperatura aceite compresor'),
-  ] },
-  { t: 'Ambiente y filtros de aire', f: [
-    num('t_amb', 'Temperatura ambiente'),
-    opt('fa_der', 'Filtros de aire derecho', OKS),
-    opt('fa_izq', 'Filtros de aire izquierdo', OKS),
+  { t: 'Orden de toma (como la planilla)', f: [
+    num('q_succ', '1 · Caudal Succión (MMSCFD)'),
+    num('t_amb', '2 · T° Ambiente °C.', '', { neg: true }),
+    num('dp_ac_mot', '3 · Presión Dif. de Filtros Motor'),
+    num('p_ac_ent', '4 · Presión Aceite Compresor – Entrada'),
+    num('p_ac_sal', '5 · Presión Aceite Compresor – Salida'),
+    num('p_succ', '6 · 1 STG Suction pressure'),
+    num('p_desc', '7 · 1 STG Discharge pressure'),
+    num('p_ac_comp', '8 · Compressor Oil Pressure'),
+    num('t_succ', '9 · Inlet Temperature', '', { neg: false }),
+    num('t_d1', '10 · Cyl 1 Discharge Temperature', '', { neg: false }),
+    num('t_d2', '11 · Cyl 2 Discharge Temperature', '', { neg: false }),
+    num('t_ac_comp', '12 · Compressor Oil Temperature', '', { neg: false }),
+    num('rpm', '13 · Average RPM'),
+    num('p_ac_mot', '14 · Engine Oil Pressure'),
+    num('t_agua', '15 · Engine Coolant Temperature', '', { neg: false }),
+    num('t_ac_mot', '16 · Engine Oil Temperature', '', { neg: false }),
+    opt('fa_izq', '17 · Filtro de aire – Izquierdo', OKS),
+    opt('fa_der', '18 · Filtro de aire – Derecho', OKS),
   ] },
 ];
 
@@ -2383,9 +2380,9 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-25b';
+const APP_VER = '2026-10-31b';
 // fecha y hora de esta versión (AAAAMMDDhhmm): se muestra en el inicio y cada equipo la informa, para ver quién quedó con una vieja
-const APP_FECHA = 202610251020;
+const APP_FECHA = 202610310210;
 function verFecha(v) { const t = String(v || ''); return t.length === 12 ? t.slice(6, 8) + '/' + t.slice(4, 6) + '/' + t.slice(0, 4) + ' ' + t.slice(8, 10) + ':' + t.slice(10, 12) : ''; }
 // Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
 // un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
