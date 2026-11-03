@@ -294,6 +294,35 @@ select.txt { appearance: auto; }
 .ring.borr .rval { stroke: #4FA3D9; }
 .borrbtn { margin-top: 8px; border-color: #4FA3D9; color: #9fd0f0; background: transparent; }
 .asub.borr { color: #7cc0ec; }
+.pctabs { display: flex; gap: 6px; margin: 4px 0 14px; }
+.pctab { height: 42px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--rule); background: transparent; color: inherit; font-weight: 600; font-size: 15px; }
+.pctab.on { background: #6FC9B0; color: #0B2436; border-color: #6FC9B0; }
+.tendpanel { display: flex; flex-direction: column; gap: 16px; }
+.tendpanel .thead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.tendpanel .thead h2 { margin: 0; }
+.tendpanel .thead p { margin: 4px 0 0; opacity: .75; }
+.tendpanel .tacc { display: flex; gap: 10px; align-items: center; }
+.tper { display: flex; border: 1px solid #2C5B78; border-radius: 10px; overflow: hidden; }
+.tper button { height: 38px; padding: 0 14px; border: 0; background: transparent; color: inherit; font-weight: 600; }
+.tper button.on { background: #1E4A66; color: #fff; }
+.tcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+.tcard { background: #12324A; color: #EAF2F6; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tcard h3 { margin: 0; font-family: var(--head); font-size: 21px; }
+.tch { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.tsel { max-width: 340px; background: #0B2436; color: #EAF2F6; border-color: #2C5B78; }
+.tkpis { display: flex; flex-wrap: wrap; gap: 28px; }
+.tkpis div { display: flex; flex-direction: column; gap: 2px; }
+.tkpis span, .tmut { font-size: 13px; color: #9DB3C2; }
+.tbig { font-family: var(--head); font-size: 30px; }
+.tvacio { padding: 30px 0; text-align: center; color: #9DB3C2; font-size: 14px; }
+.tkbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.tkbtns button { height: 36px; padding: 0 12px; border-radius: 18px; border: 0; background: #1E4A66; color: #EAF2F6; font-weight: 600; }
+.tkbtns button.on { background: #6FC9B0; color: #0B2436; }
+.ttank { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #1E4A66; padding-top: 10px; }
+.tgrid { display: grid; grid-template-columns: 90px repeat(4, minmax(0, 1fr)) 170px 110px; align-items: center; font-size: 15px; overflow-x: auto; }
+.tgrid > * { padding: 9px 4px; border-top: 1px solid #1E4A66; }
+.tgrid .tgh { border-top: 0; color: #9DB3C2; font-weight: 600; font-size: 13px; }
+.tsp { line-height: 0; }
 .ini-version { text-align: center; font-size: 12.5px; color: var(--muted, #8aa); margin: 18px 0 4px; }
 .eqpanel { margin-top: 16px; }
 .eqrow { padding: 10px 0; border-top: 1px solid var(--rule, rgba(255,255,255,.1)); display: flex; flex-direction: column; gap: 2px; font-size: 14.5px; }
@@ -1646,7 +1675,7 @@ function homeView() {
     h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
   document.body.classList.toggle('pcx', !modoCarga());
   const ver = h('p', { class: 'ini-version' }, 'Datos KTI · versión del ' + verFecha(APP_FECHA));
-  if (!esMovil() && !SU) return [hero, excelPanel(), equiposPanel(), ver];
+  if (!esMovil() && !SU) return PC_TAB === 'tend' ? [pcTabs(), tendPanel(), ver] : [hero, pcTabs(), excelPanel(), equiposPanel(), ver];
   if (SU) return [hero, suBarra(), turno, ...GROUP_ORDER.map(accGroup), excelPanel(), equiposPanel(), ver];
   return [hero, turno, ...GROUP_ORDER.map(accGroup), ver];
 }
@@ -2380,9 +2409,9 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-10-31b';
+const APP_VER = '2026-11-03a';
 // fecha y hora de esta versión (AAAAMMDDhhmm): se muestra en el inicio y cada equipo la informa, para ver quién quedó con una vieja
-const APP_FECHA = 202610310210;
+const APP_FECHA = 202611031630;
 function verFecha(v) { const t = String(v || ''); return t.length === 12 ? t.slice(6, 8) + '/' + t.slice(4, 6) + '/' + t.slice(0, 4) + ' ' + t.slice(8, 10) + ':' + t.slice(10, 12) : ''; }
 // Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
 // un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
@@ -3407,6 +3436,139 @@ function xlUltima(sc) {
   const dia = d.toDateString() === hoy.toDateString() ? 'hoy' : pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1);
   return 'Última lectura: ' + dia + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
+/* ---------- Tendencias (solo en la compu): TurboExpander, tanques y recompresores en el tiempo ---------- */
+let PC_TAB = lsGet('kti_pctab', 'excel') === 'tend' ? 'tend' : 'excel';
+const TEND = { per: lsGet('kti_tend_per', '7d'), lect: null, cargando: false, error: '', turboVar: lsGet('kti_tend_turbo', 'rpm'), tank: null, ts: 0 };
+const TEND_IDS = ['rc4', 'rc7', 'rc8', 'rc9', 'turbo', 'tanques'];
+const TEND_PER = [['24h', '24 h'], ['7d', '7 días'], ['30d', '30 días'], ['mes', 'Mes']];
+// temperatura de descarga que se sigue en cada reco (el RC#9 tiene otra planilla)
+const TEND_RC = [['rc4', 'RC#4', 't_d_der'], ['rc7', 'RC#7', 't_d_der'], ['rc8', 'RC#8', 't_d_der'], ['rc9', 'RC#9', 't_d1']];
+function pcTabs() {
+  const tab = (id, l) => h('button', { type: 'button', role: 'tab', 'aria-selected': String(PC_TAB === id), class: 'pctab' + (PC_TAB === id ? ' on' : ''),
+    onclick: () => { PC_TAB = id; lsSet('kti_pctab', id); if (id === 'tend') tendCargar(); render(true); } }, l);
+  return h('div', { class: 'pctabs', role: 'tablist', 'aria-label': 'Secciones' }, tab('excel', 'Planillas Excel'), tab('tend', 'Tendencias'));
+}
+async function tendCargar(forzar) {
+  if (TEND.cargando || !FB_OK) return;
+  if (!forzar && TEND.lect && Date.now() - TEND.ts < 60e3) return;
+  TEND.cargando = true; TEND.error = '';
+  try { TEND.lect = await lecturasDe(TEND_IDS, null); TEND.ts = Date.now(); }
+  catch (e) { console.error(e); TEND.error = (e && e.code) === 'permission-denied' ? 'Esta compu no tiene permiso para leer los datos.' : 'No se pudieron leer los datos (' + ((e && e.code) || 'error') + ').'; }
+  TEND.cargando = false;
+  const el = document.getElementById('tendPanel'); if (el) el.replaceWith(tendPanel());
+}
+setInterval(() => { if (PC_TAB === 'tend' && !esMovil() && document.getElementById('tendPanel') && !document.hidden) tendCargar(true); }, 3 * 60e3);
+const tendFecha = f => new Date(f.slice(0, 10) + 'T' + (f.slice(11, 16) || '00:00') + ':00');
+function tendDesde() {
+  const n = new Date();
+  if (TEND.per === '24h') return new Date(n - 24 * 3600e3);
+  if (TEND.per === '30d') return new Date(n - 30 * 24 * 3600e3);
+  if (TEND.per === 'mes') return new Date(n.getFullYear(), n.getMonth(), 1);
+  return new Date(n - 7 * 24 * 3600e3);
+}
+// puntos {t, y} de una variable de una planilla dentro del período elegido
+function tendSerie(sheet, key) {
+  const d0 = tendDesde().getTime();
+  return (TEND.lect || []).filter(x => x.sheetId === sheet).map(x => ({ t: tendFecha(x.fecha).getTime(), y: toNum(x.v[key]), f: x.fecha, op: x.operador }))
+    .filter(p => p.y != null && p.t >= d0).sort((a, b) => a.t - b.t);
+}
+function tendUltimo(sheet, key) {
+  const l = (TEND.lect || []).filter(x => x.sheetId === sheet && toNum(x.v[key]) != null).sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+  return l.length ? { y: toNum(l[0].v[key]), f: l[0].fecha } : null;
+}
+const tN = (v, d) => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('es-AR', { maximumFractionDigits: d == null ? 1 : d });
+const tF = f => f ? f.slice(8, 10) + '/' + f.slice(5, 7) + ' ' + f.slice(11, 16) : '';
+function tendEscala(min, max) {
+  if (min === max) { min -= 1; max += 1; }
+  const paso0 = (max - min) / 3, mag = Math.pow(10, Math.floor(Math.log10(paso0)));
+  const paso = [1, 2, 2.5, 5, 10].map(m => m * mag).find(p => p >= paso0) || paso0;
+  const lo = Math.floor(min / paso) * paso, hi = Math.ceil(max / paso) * paso;
+  const ticks = []; for (let v = lo; v <= hi + paso / 2; v += paso) ticks.push(+v.toFixed(6));
+  return { lo, hi, ticks };
+}
+// gráfico de línea en SVG (solo números: no lleva texto cargado por usuarios)
+function tendLinea(pts, color, alto, etiqueta) {
+  const W = 580, H = alto || 200, L = 64, T = 10, B = 26, pw = W - L - 12, ph = H - T - B;
+  if (!pts.length) return '<div class="tvacio">Sin lecturas en este período.</div>';
+  const ys = pts.map(p => p.y), sc = tendEscala(Math.min(...ys), Math.max(...ys));
+  const t0 = tendDesde().getTime(), t1 = Math.max(Date.now(), pts[pts.length - 1].t);
+  const X = t => L + (t - t0) / (t1 - t0 || 1) * pw, Y = v => T + ph - (v - sc.lo) / (sc.hi - sc.lo) * ph;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + etiqueta + '"><g font-family="Barlow, sans-serif" font-size="14" fill="#9DB3C2">';
+  sc.ticks.forEach(v => { s += '<text x="0" y="' + (Y(v) + 4).toFixed(1) + '">' + tN(v) + '</text><path d="M' + L + ',' + Y(v).toFixed(1) + ' H' + (L + pw) + '" stroke="#1E4A66"/>'; });
+  for (let i = 0; i <= 3; i++) { const t = t0 + (t1 - t0) * i / 3, d = new Date(t); s += '<text x="' + (L + pw * i / 3 - (i === 3 ? 38 : i ? 18 : 0)).toFixed(1) + '" y="' + (H - 6) + '">' + (TEND.per === '24h' ? pad2(d.getHours()) + ':' + pad2(d.getMinutes()) : pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1)) + '</text>'; }
+  s += '</g><path d="' + pts.map((p, i) => (i ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.y).toFixed(1)).join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linejoin="round"/>';
+  pts.forEach((p, i) => { s += '<circle cx="' + X(p.t).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="' + (i === pts.length - 1 ? 5 : 3) + '" fill="#12324A" stroke="' + color + '" stroke-width="2"><title>' + tF(p.f) + ' · ' + tN(p.y) + '</title></circle>'; });
+  return s + '</svg>';
+}
+function tendSpark(pts, color) {
+  if (pts.length < 2) return '<span class="tvacio">—</span>';
+  const W = 160, H = 34, ys = pts.map(p => p.y), mn = Math.min(...ys), mx = Math.max(...ys), t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+  const X = t => (t - t0) / (t1 - t0 || 1) * (W - 4) + 2, Y = v => H - 3 - (v - mn) / ((mx - mn) || 1) * (H - 6);
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true"><path d="' + pts.map((p, i) => (i ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.y).toFixed(1)).join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2"/></svg>';
+}
+const svgEl = (cls, html) => { const d = h('div', { class: cls }); d.innerHTML = html; return d; };
+function tendStats(pts) {
+  if (!pts.length) return null;
+  const ys = pts.map(p => p.y);
+  return { min: Math.min(...ys), max: Math.max(...ys), prom: ys.reduce((a, b) => a + b, 0) / ys.length, ult: pts[pts.length - 1] };
+}
+function tendPanel() {
+  if (!TEND.lect && !TEND.cargando && !TEND.error) setTimeout(() => tendCargar(), 0);
+  const perBtns = h('div', { class: 'tper', role: 'group', 'aria-label': 'Período' }, TEND_PER.map(([id, l]) => h('button', { type: 'button', class: TEND.per === id ? 'on' : '', 'aria-pressed': String(TEND.per === id),
+    onclick: () => { TEND.per = id; lsSet('kti_tend_per', id); const el = document.getElementById('tendPanel'); if (el) el.replaceWith(tendPanel()); } }, l)));
+  const head = h('div', { class: 'thead' }, h('div', null, h('h2', null, 'Tendencias'),
+    h('p', null, TEND.cargando && !TEND.lect ? 'Leyendo las lecturas guardadas…' : TEND.error || ('Con las lecturas guardadas de los celulares' + (TEND.ts ? ' · actualizado ' + (d => pad2(d.getHours()) + ':' + pad2(d.getMinutes()))(new Date(TEND.ts)) : '')))),
+    h('div', { class: 'tacc' }, perBtns, h('button', { type: 'button', class: 'btn small', onclick: () => tendCargar(true) }, 'Actualizar')));
+  if (!TEND.lect) return h('section', { class: 'xlpanel tendpanel', id: 'tendPanel' }, head);
+  // TurboExpander
+  const tvars = BY.turbo.groups.flatMap(g => g.f).filter(f => f.t === 'n');
+  if (!tvars.some(f => f.k === TEND.turboVar)) TEND.turboVar = 'rpm';
+  const tv = tvars.find(f => f.k === TEND.turboVar);
+  const sel = h('select', { class: 'txt tsel', 'aria-label': 'Variable del TurboExpander', onchange: e => { TEND.turboVar = e.target.value; lsSet('kti_tend_turbo', e.target.value); const el = document.getElementById('tendPanel'); if (el) el.replaceWith(tendPanel()); } },
+    tvars.map(f => h('option', { value: f.k }, f.l)));
+  sel.value = TEND.turboVar;
+  const tp = tendSerie('turbo', TEND.turboVar), ts = tendStats(tp), tu = tendUltimo('turbo', TEND.turboVar);
+  const turbo = h('section', { class: 'tcard' },
+    h('div', { class: 'tch' }, h('h3', null, 'TurboExpander'), sel),
+    h('div', { class: 'tkpis' },
+      h('div', null, h('span', null, 'Última' + (tu ? ' · ' + tF(tu.f) : '')), h('b', { class: 'tbig' }, tu ? tN(tu.y) + (tv.u ? ' ' + tv.u : '') : '—')),
+      h('div', null, h('span', null, 'Mín · Prom · Máx del período'), h('b', null, ts ? tN(ts.min) + ' · ' + tN(ts.prom) + ' · ' + tN(ts.max) : '—'))),
+    svgEl('tchart', tendLinea(tp, '#6FC9B0', 220, tv.l + ' en el período')));
+  // Tanques: último nivel de cada uno
+  const niv = TANQUES.map(([i, nm]) => ({ i, nm, u: tendUltimo('tanques', 't' + i + '_niv') }));
+  const mx = Math.max(230, ...niv.map(n => n.u ? n.u.y : 0));
+  let bars = '<svg viewBox="0 0 580 230" width="100%" role="img" aria-label="Último nivel de cada tanque"><g font-family="Barlow, sans-serif" text-anchor="middle">';
+  niv.forEach((n, k) => {
+    const x = 20 + k * 80, hgt = n.u ? Math.max(3, n.u.y / mx * 160) : 0, y = 190 - hgt, sel = TEND.tank === n.i;
+    bars += '<rect x="' + (x + 16) + '" y="' + y.toFixed(1) + '" width="48" height="' + hgt.toFixed(1) + '" rx="4" fill="' + (sel ? '#6FC9B0' : '#4FA3D9') + '"/>' +
+      '<text x="' + (x + 40) + '" y="' + (y - 6).toFixed(1) + '" font-size="17" font-weight="700" fill="#EAF2F6">' + (n.u ? tN(n.u.y, 0) : '—') + '</text>' +
+      '<text x="' + (x + 40) + '" y="214" font-size="15" fill="#9DB3C2">TK ' + n.i + '</text>';
+  });
+  bars += '<path d="M20,190 H580" stroke="#2C5B78"/></g></svg>';
+  const tkBtns = h('div', { class: 'tkbtns', role: 'group', 'aria-label': 'Elegir tanque' }, TANQUES.map(([i]) => h('button', { type: 'button', class: TEND.tank === i ? 'on' : '', 'aria-pressed': String(TEND.tank === i),
+    onclick: () => { TEND.tank = TEND.tank === i ? null : i; const el = document.getElementById('tendPanel'); if (el) el.replaceWith(tendPanel()); } }, 'TK ' + i)));
+  const ultTk = niv.map(n => n.u && n.u.f).filter(Boolean).sort().pop();
+  const tanques = h('section', { class: 'tcard' },
+    h('div', { class: 'tch' }, h('h3', null, 'Tanques · nivel actual (cm)'), h('span', { class: 'tmut' }, ultTk ? tF(ultTk) : '')),
+    svgEl('tchart', bars), tkBtns,
+    TEND.tank ? (() => {
+      const i = TEND.tank, nm = TANQUES.find(t => t[0] === i)[1];
+      const vs = [['t' + i + '_niv', 'Nivel (cm)', '#4FA3D9'], ...(i < 7 ? [['t' + i + '_p', 'Presión (kg/cm²)', '#F0B07A'], ['t' + i + '_t', 'Temperatura (°C)', '#C9A7F0']] : [])];
+      return h('div', { class: 'ttank' }, h('b', null, nm), vs.map(([k, l, c]) => h('div', null, h('span', { class: 'tmut' }, l), svgEl('tchart', tendLinea(tendSerie('tanques', k), c, 150, l + ' del tanque ' + i)))));
+    })() : h('p', { class: 'tmut' }, 'Tocá un tanque para ver su nivel, presión y temperatura en el período.'));
+  // Recompresores
+  const cols = [['rpm', 'R.P.M.', 0], ['p_succ', 'Pres. succión', 1], [null, 'Temp. °F descarga', 1], ['p_ac_mot', 'Pres. aceite motor', 1]];
+  const filas = TEND_RC.map(([id, nm, kd]) => {
+    const ult = (TEND.lect || []).filter(x => x.sheetId === id).sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0];
+    return [h('b', null, nm), ...cols.map(([k, , d]) => h('span', null, ult ? tN(toNum(ult.v[k || kd]), d) : '—')),
+      svgEl('tsp', tendSpark(tendSerie(id, kd), '#6FC9B0')), h('span', { class: 'tmut' }, ult ? tF(ult.fecha) : 'sin lecturas')];
+  });
+  const recos = h('section', { class: 'tcard tfull' },
+    h('div', { class: 'tch' }, h('h3', null, 'Recompresores · última lectura y temperatura de descarga en el período')),
+    h('div', { class: 'tgrid' }, h('span', { class: 'tgh' }, 'Equipo'), cols.map(c => h('span', { class: 'tgh' }, c[1])), h('span', { class: 'tgh' }, 'Temp. descarga · tendencia'), h('span', { class: 'tgh' }, 'Última lectura'), filas));
+  return h('section', { class: 'xlpanel tendpanel', id: 'tendPanel' }, head, h('div', { class: 'tcols' }, turbo, tanques), recos,
+    h('p', { class: 'tmut' }, 'RC#4, #7 y #8: temperatura de descarga lado derecho · RC#9: Cyl 1 Discharge Temperature. Pasá el mouse sobre un punto para ver fecha y valor.'));
+}
 let EQUIPOS = null, eqUnsub = null;
 function equiposIniciar() {
   if (eqUnsub || !FB_OK || esMovil() || HAB.estado !== 'habilitado') return;
@@ -3558,6 +3720,7 @@ function xlIniciar() {
     if (!primera) {
       const nuevas = XL_ENV.filter(x => !antes.has(x.id) && XL_SECC.some(sc => sc.ids.includes(x.sheetId)));
       if (nuevas.length) avisarNuevas(nuevas);
+      if (nuevas.length && PC_TAB === 'tend') tendCargar(true);
     }
     primera = false; antes = new Set(XL_ENV.map(x => x.id));
     pintarXL();
