@@ -795,6 +795,30 @@ SHEETS.forEach(sh => { sh.multi = SHEETS.filter(x => x.carpeta === sh.carpeta).l
 const DRIVE_ROOT = 'DATOS';
 const BY = Object.fromEntries(SHEETS.map(s => [s.id, s]));
 const GROUP_ORDER = [...new Set(SHEETS.map(s => s.grp))];
+// Temperaturas de recompresores y TurboExpander: el operador las carga en °C y las planillas Excel las muestran en °F.
+// Las lecturas guardadas desde este cambio llevan "tempC"; las anteriores ya estaban en °F y quedan como están.
+const RC_TEMP = ['t_d_der', 't_d_izq', 't_adm_izq', 't_adm_der', 't_ac_mot', 't_ac_comp', 't_agua'];
+const TEMP_C = { rc4: RC_TEMP, rc7: RC_TEMP, rc8: RC_TEMP, rc9: ['t_succ', 't_d1', 't_d2', 't_ac_comp', 't_agua', 't_ac_mot'],
+  // entrada/salida expansor, entrada compresor y T° ambiente salen del DCS ya en °F: se cargan en °F como siempre
+  turbo: ['seal_in_t', 'res_t', 'lube_in_t', 'seal_sup_t', 'comp_out_t', 'drain_t', 'exp_brg_t', 'comp_brg_t'] };
+const cAf = v => { const n = toNum(v); return n === null ? v : Math.round((n * 9 / 5 + 32) * 10) / 10; };
+const fAc = v => { const n = toNum(v); return n === null ? v : String(Math.round((n - 32) * 5 / 9 * 10) / 10).replace('.', ','); };
+// pasa a °F (para Excel y tendencias) las temperaturas de una lectura cargada en °C
+function aFahrenheit(sheetId, v) {
+  const ks = TEMP_C[sheetId]; if (!ks || !v) return v;
+  const o = Object.assign({}, v); for (const k of ks) if (o[k] !== undefined && o[k] !== '') o[k] = cAf(o[k]); return o;
+}
+// una lectura vieja (en °F) mostrada en el celular, que ahora carga en °C
+function aCelsius(sheetId, v) {
+  const ks = TEMP_C[sheetId]; if (!ks || !v) return v;
+  const o = Object.assign({}, v); for (const k of ks) if (o[k] !== undefined && o[k] !== '') o[k] = fAc(o[k]); return o;
+}
+for (const id of Object.keys(TEMP_C)) BY[id].groups.flatMap(g => g.f).forEach(f => {
+  if (!TEMP_C[id].includes(f.k)) return;
+  f.u = '°C'; f.l = f.l.replace('°F', '°C'); f.neg = true;
+});
+// las que vienen del DCS en °F: que se vea la unidad al cargarlas
+BY.turbo.groups.flatMap(g => g.f).forEach(f => { if (['exp_in_t', 'exp_out_t', 'comp_in_t'].includes(f.k)) f.u = '°F'; });
 
 /* ---------- Utilidades compartidas ---------- */
 function entryHasData(e) {
@@ -1349,7 +1373,7 @@ function computeLast() {
   // lo guardado planilla por planilla también cuenta como lectura anterior si es más reciente
   for (const id of Object.keys(ULT)) {
     const u = ULT[id];
-    if (BY[id] && u && u.v && Object.keys(u.v).length && (!ts[id] || u.ts > ts[id])) { LAST[id] = u.v; LASTDATE[id] = u.fecha; }
+    if (BY[id] && u && u.v && Object.keys(u.v).length && (!ts[id] || u.ts > ts[id])) { LAST[id] = TEMP_C[id] && !u.tempC ? aCelsius(id, u.v) : u.v; LASTDATE[id] = u.fecha; }
   }
 }
 const val = (id, k) => (S.v[id] && S.v[id][k]) || '';
@@ -2293,7 +2317,7 @@ async function guardarPlanilla(sh) {
   const ahora = SU && SU_FECHA ? { fecha: SU_FECHA, seg: '00' } : stampOf(new Date());
   const title = driveTitle(sh, ahora, !!prev && prev.titulo === driveTitle(sh, ahora, false));
   const st = stateDe(sh);
-  const extra = Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}, SU ? { su: true } : {});
+  const extra = Object.assign({ sheetId: sh.id, titulo: title, carpeta: sh.carpeta, fechaPdf: ahora.fecha }, corrige ? { corrige } : {}, SU ? { su: true } : {}, TEMP_C[sh.id] ? { tempC: true } : {});
   const env = enviarCentral('planilla', st, extra);
   if (!env) return toast('No se pudo guardar. Probá de nuevo.');
   busy(true, 'Guardando…');
@@ -2308,7 +2332,7 @@ async function guardarPlanilla(sh) {
   if (res.cola) ENVIOS[env].catch(e => { registrarFallida(sh, st, extra, e); reintentarFallidas(); });
   if (PRINCIPAL) marcarBajado([env]);
   (S.guardadas = S.guardadas || {})[sh.id] = { fecha: ahora.fecha, donde: 'central', titulo: title, env };
-  if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now() }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
+  if (sh.kind === 'form') { ULT[sh.id] = { v: clone(S.v[sh.id] || {}), fecha: ahora.fecha, ts: Date.now(), tempC: !!TEMP_C[sh.id] }; DB.put('kv', ULT, 'ultimas'); computeLast(); }
   // campos en blanco para la próxima toma (la lectura anterior queda en gris como referencia)
   if (sh.kind === 'list') S[sh.id] = []; else delete S.v[sh.id];
   if (sh.photos) S[sh.photos.key] = [];
@@ -2319,7 +2343,7 @@ async function guardarPlanilla(sh) {
 function corregirUltima(sh) {
   const g = S.guardadas && S.guardadas[sh.id], u = ULT[sh.id];
   if (!g || !u) return toast('No encontré la última lectura de ' + sh.title + '.');
-  S.v[sh.id] = clone(u.v); g.corrigiendo = true;
+  S.v[sh.id] = TEMP_C[sh.id] && !u.tempC ? aCelsius(sh.id, clone(u.v)) : clone(u.v); g.corrigiendo = true;
   touch(); render(true); toast('Corregí los datos y tocá Guardar: reemplaza la lectura de las ' + fmtHora(g.fecha) + '.');
 }
 function cancelarCorreccion(sh) {
@@ -2409,9 +2433,9 @@ function suBarra() {
 }
 let PRINCIPAL = lsGet('kti_principal', '') === '1';
 // Aviso de versión nueva: compara esta versión con la publicada
-const APP_VER = '2026-11-03a';
+const APP_VER = '2026-11-05b';
 // fecha y hora de esta versión (AAAAMMDDhhmm): se muestra en el inicio y cada equipo la informa, para ver quién quedó con una vieja
-const APP_FECHA = 202611031630;
+const APP_FECHA = 202611051410;
 function verFecha(v) { const t = String(v || ''); return t.length === 12 ? t.slice(6, 8) + '/' + t.slice(4, 6) + '/' + t.slice(0, 4) + ' ' + t.slice(8, 10) + ':' + t.slice(10, 12) : ''; }
 // Igual que Pozos: si en GitHub hay una versión más nueva, aparece un cartel a pantalla completa con
 // un solo botón "Actualizar". Lo cargado no se pierde (queda guardado en el dispositivo).
@@ -2873,7 +2897,8 @@ async function lecturasDe(ids, mes) {
     const f = r.fechaPdf || r.fecha || '';
     if (mes && f.slice(0, 7) !== mes) return;
     let st = null; try { st = JSON.parse(r.estado); } catch (e) { return; }
-    L.push({ id: d.id, sheetId: r.sheetId, fecha: f, ts: r.clientTs || 0, operador: r.operador || '', v: (st && st.v && st.v[r.sheetId]) || {} });
+    const v0 = (st && st.v && st.v[r.sheetId]) || {};
+    L.push({ id: d.id, sheetId: r.sheetId, fecha: f, ts: r.clientTs || 0, operador: r.operador || '', v: r.tempC ? aFahrenheit(r.sheetId, v0) : v0 });
   });
   L.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.ts - b.ts));
   const out = [];
